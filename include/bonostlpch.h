@@ -7,4 +7,13 @@
 
 #endif //BONOSTL_BONOSTLPCH_H
 
+#include <iostream>
+
+#include <stack>
+
+#include <condition_variable>
+#include <future>
+#include <thread>
+
 #include <exception>
+#include <memory>
