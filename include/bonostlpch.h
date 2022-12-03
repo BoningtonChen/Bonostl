@@ -9,8 +9,11 @@
 
 #include <iostream>
 
+#include <array>
+#include <vector>
 #include <stack>
 #include <queue>
+#include <ranges>
 
 #include <condition_variable>
 #include <future>
@@ -20,3 +23,9 @@
 #include <exception>
 #include <memory>
 #include <functional>
+#include <algorithm>
+
+namespace Bonostl
+{
+
+}
