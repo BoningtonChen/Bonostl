@@ -11,7 +11,9 @@ set(TEST_SRC
         )
 set(INC_SRC
         ${INC_DIR}bonostlpch.h
+        ${INC_DIR}queue.hpp
         ${INC_DIR}threadsafe_stack.hpp
+        ${INC_DIR}threadsafe_queue.hpp
         )
 
 add_executable(Bonostl ${TEST_SRC} ${INC_SRC})
