@@ -16,10 +16,13 @@ A Bonity's C++ standard library.
 
 ## Get Started
 - You can use `git clone https://github.com/BoningtonChen/Bonostl` to clone the repository.
-- The `Bonostl` library headers are all `.hpp` headers, which means you can simply include them in your own projects.
+- The Bonostl library headers are all `.hpp` headers, which means you can simply include them in your own projects.
 
 ## Library Stuff
 - Containers
+  - bonostlpch(A dependency of a bunch of files included from C++ standard libraries)
+  - spinlock_mutex
+  - queue
   - threadsafe_stack
   - threadsafe_queue
 

@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <future>
 #include <thread>
+#include <atomic>
 
 #include <exception>
 #include <memory>
