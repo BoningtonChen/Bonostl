@@ -1,0 +1,8 @@
+//
+// Created by 陈奕锟 on 2022/12/3.
+//
+
+#ifndef BONOSTL_THREADSAFE_STACK_HPP
+#define BONOSTL_THREADSAFE_STACK_HPP
+
+#endif //BONOSTL_THREADSAFE_STACK_HPP
