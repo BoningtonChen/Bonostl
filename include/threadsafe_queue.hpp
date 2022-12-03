@@ -76,6 +76,8 @@ private:
         if ( head.get() == get_tail() )
             return std::unique_ptr<node>();
 
+        value = std::move(*head->data);
+
         return pop_head();
     }
 
@@ -85,13 +87,6 @@ public:
     threadsafe_queue(const threadsafe_queue& other) = delete;
 
     threadsafe_queue& operator=(const threadsafe_queue& other) = delete;
-
-    std::shared_ptr<T> try_pop()
-    {
-        std::unique_ptr<node> old_head = pop_head();
-
-        return old_head ? old_head -> data : std::shared_ptr<T>();
-    }
 
     void push(T new_value)
     {
@@ -120,5 +115,24 @@ public:
     void wait_and_pop(T& value)
     {
         std::unique_ptr<node> const old_head = wait_pop_head(value);
+    }
+
+    std::shared_ptr<T> try_pop()
+    {
+        std::unique_ptr<node> old_head = pop_head();
+
+        return old_head ? old_head -> data : std::shared_ptr<T>();
+    }
+    bool try_pop(T& value)
+    {
+        std::unique_ptr<node> const old_head = try_pop_head(value);
+        return old_head;
+    }
+
+    bool empty()
+    {
+        std::lock_guard<std::mutex> head_lock(head_mutex);
+
+        return ( head.get() == get_tail() );
     }
 };
