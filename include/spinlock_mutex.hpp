@@ -9,23 +9,23 @@
 
 #include "bonostlpch.h"
 
-class spinlock_mutex
-{
-private:
-    std::atomic_flag flag;
+namespace Bonostl {
 
-public:
-    spinlock_mutex()
-        : flag(ATOMIC_FLAG_INIT)
-    {}
+    class spinlock_mutex {
+    private:
+        std::atomic_flag flag;
 
-    void lock()
-    {
-        while ( flag.test_and_set(std::memory_order_acquire) );
-    }
+    public:
+        spinlock_mutex()
+                : flag(ATOMIC_FLAG_INIT) {}
 
-    void unlock()
-    {
-        flag.clear(std::memory_order_relaxed);
-    }
-};
+        void lock() {
+            while (flag.test_and_set(std::memory_order_acquire));
+        }
+
+        void unlock() {
+            flag.clear(std::memory_order_relaxed);
+        }
+    };
+
+}

@@ -9,63 +9,64 @@
 
 #include "bonostlpch.h"
 
-struct empty_stack : std::exception
-{
-    [[nodiscard]] const char* what() const noexcept override;
-};
+namespace Bonostl {
 
-template<typename T>
-class threadsafe_stack
-{
-private:
-    std::stack<T> data;
-    mutable std::mutex m;
+    struct empty_stack : std::exception {
+        [[nodiscard]] const char *what() const noexcept override;
+    };
 
-public:
-    threadsafe_stack() = default;
-    threadsafe_stack(const threadsafe_stack& other)
-    {
-        std::lock_guard<std::mutex> lock(other.m);
+    template<typename T>
+    class threadsafe_stack {
+    private:
+        std::stack<T> data;
+        mutable std::mutex m;
 
-        data = other.data;
-    }
-    threadsafe_stack& operator=(const threadsafe_stack&) = delete;
+    public:
+        threadsafe_stack() = default;
 
-    void push(T new_value)
-    {
-        std::lock_guard<std::mutex> lock(m);
+        threadsafe_stack(const threadsafe_stack &other) {
+            std::lock_guard<std::mutex> lock(other.m);
 
-        data.push( std::move(new_value) );
-    }
-    std::shared_ptr<T> pop()
-    {
-        std::lock_guard<std::mutex> lock(m);
+            data = other.data;
+        }
 
-        if ( data.empty() ) throw empty_stack();
+        threadsafe_stack &operator=(const threadsafe_stack &) = delete;
 
-        std::shared_ptr<T> const res(
-                std::make_shared<T>( std::move(data.top()) )
-                );
+        void push(T new_value) {
+            std::lock_guard<std::mutex> lock(m);
 
-        data.pop();
+            data.push(std::move(new_value));
+        }
 
-        return res;
-    }
-    void pop(T& value)
-    {
-        std::lock_guard<std::mutex> lock(m);
+        std::shared_ptr<T> pop() {
+            std::lock_guard<std::mutex> lock(m);
 
-        if ( data.empty() ) throw empty_stack();
+            if (data.empty()) throw empty_stack();
 
-        value = std::move( data.top() );
-        data.pop();
-    }
+            std::shared_ptr<T> const res(
+                    std::make_shared<T>(std::move(data.top()))
+            );
 
-    bool empty() const
-    {
-        std::lock_guard<std::mutex> lock(m);
+            data.pop();
 
-        return data.empty();
-    }
+            return res;
+        }
 
-};
+        void pop(T &value) {
+            std::lock_guard<std::mutex> lock(m);
+
+            if (data.empty()) throw empty_stack();
+
+            value = std::move(data.top());
+            data.pop();
+        }
+
+        bool empty() const {
+            std::lock_guard<std::mutex> lock(m);
+
+            return data.empty();
+        }
+
+    };
+
+}
