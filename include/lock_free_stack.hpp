@@ -64,15 +64,18 @@ namespace Bonostl {
         return hazard.get_pointer();
     }
 
-    bool outstanding_hazard_pointers_for(void *p) {
+    bool outstanding_hazard_pointers_for(void* p) {
+//    Old Version:
 //    for (auto & hazard_pointer : hazard_pointers)
 //    {
 //        if ( hazard_pointer.pointer.load() == p )
 //            return true;
 //    }
 //    return false;
-        return std::any_of(hazard_pointers.begin(), hazard_pointers.end(),
-                           [&](auto &hazardPointer) { return hazardPointer.pointer.load() == p; });
+        return std::any_of(
+                hazard_pointers.begin(), hazard_pointers.end(),
+                [&](auto &hazardPointer) { return hazardPointer.pointer.load() == p; }
+                );
     }
 
     template<typename T>
