@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include <stack>
+#include <queue>
 
 #include <condition_variable>
 #include <future>
