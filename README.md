@@ -21,10 +21,11 @@ A Bonity's C++ standard library.
 ## Library Stuff
 - Containers
   - bonostlpch(A dependency of a bunch of files included from C++ standard libraries)
-  - spinlock_mutex
   - queue
   - threadsafe_stack
   - threadsafe_queue
+  - spinlock_mutex
+  - lock_free_stack
 
 ## LICENSE
 Bonostl uses MIT License.
