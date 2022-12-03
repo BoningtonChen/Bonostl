@@ -19,3 +19,4 @@
 
 #include <exception>
 #include <memory>
+#include <functional>

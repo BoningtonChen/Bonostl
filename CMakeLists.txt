@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.24)
-project(Bonostl)
+project(Bonostl CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
+
+include_directories(include/)
 
 set(INC_DIR include/)
 set(SRC_DIR src/)
