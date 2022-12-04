@@ -129,15 +129,23 @@ namespace Bonostl {
     template<typename T>
     class lock_free_stack {
     private:
-        struct node {
-            std::shared_ptr<T> data;
-            std::shared_ptr<node> next;
+        struct node;
 
-            explicit node(T const &i_data)
-                    : data(std::make_shared<T>(data)) {}
+        struct counted_node_ptr {
+            int external_count;
+            node *ptr;
         };
 
-        std::shared_ptr<node> head;
+        struct node {
+            std::shared_ptr<T> data;
+            std::atomic<int> internal_count;
+            counted_node_ptr *next;
+
+            explicit node(T const &i_data)
+                    : data(std::make_shared<T>(data)), internal_count(0) {}
+        };
+
+        std::atomic<counted_node_ptr> head;
         std::atomic<unsigned> threads_in_pop;
         std::atomic<node *> to_be_deleted;
 
@@ -145,6 +153,16 @@ namespace Bonostl {
             node *next = nodes->next;
             delete nodes;
             nodes = next;
+        }
+
+        void increase_head_count(counted_node_ptr &old_counter) {
+            counted_node_ptr new_counter;
+            do {
+                new_counter = old_counter;
+                ++new_counter.external_count;
+            } while (!head.compare_exchange_strong(old_counter, new_counter));
+
+            old_counter.external_count = new_counter.external_count;
         }
 
         void try_reclaim(node *old_head) {
@@ -188,11 +206,17 @@ namespace Bonostl {
     public:
         lock_free_stack() = default;
 
-        void push(T const &data) {
-            std::shared_ptr<node> const new_node = std::make_shared<node>(data);
-            new_node->next = std::atomic_load(&head);
+        ~lock_free_stack() {
+            while (pop());
+        }
 
-            while (!std::atomic_compare_exchange_weak(&head, &new_node->next, new_node));
+        void push(T const &data) {
+            counted_node_ptr new_node;
+            new_node.ptr = new node(data);
+            new_node.external_count = 1;
+            new_node.ptr->next = head.load();
+
+            while (!head.compare_exchange_weak(new_node.ptr->next, new_node));
         }
 
         std::shared_ptr<T> pop(T &result) {
@@ -213,22 +237,29 @@ namespace Bonostl {
         }
 
         std::shared_ptr<T> pop() {
-            std::shared_ptr<node> old_head = std::atomic_load(&head);
+            counted_node_ptr old_head = head.load();
 
-            while (old_head && !std::atomic_compare_exchange_weak(
-                    &head, &old_head, std::atomic_load(&old_head->next)
-            ));
+            for (;;) {
+                increase_head_count(old_head);
+                node *const ptr = old_head.ptr;
 
-            if (old_head) {
-                std::atomic_store(&old_head->next, std::shared_ptr<node>());
+                if (!ptr) {
+                    return std::shared_ptr<T>();
+                }
+                if (head.compare_exchange_strong(old_head, ptr->next)) {
+                    std::shared_ptr<T> res;
+                    res.swap(ptr->data);
 
-                return old_head->data;
+                    int const count_increase = old_head.external_count - 2;
+
+                    if (ptr->internal_count.fetch_add(count_increase) == -count_increase) {
+                        delete ptr;
+                    }
+                    return res;
+                } else if (ptr->internal_count.fetch_sub(1) == 1) {
+                    delete ptr;
+                }
             }
-            return std::shared_ptr<T>();
-        }
-
-        ~lock_free_stack() {
-            while (pop());
         }
     };
 
