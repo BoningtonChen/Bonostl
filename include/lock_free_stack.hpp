@@ -139,7 +139,7 @@ namespace Bonostl {
         struct node {
             std::shared_ptr<T> data;
             std::atomic<int> internal_count;
-            counted_node_ptr *next;
+            counted_node_ptr next;
 
             explicit node(T const &i_data)
                     : data(std::make_shared<T>(data)), internal_count(0) {}
@@ -160,7 +160,9 @@ namespace Bonostl {
             do {
                 new_counter = old_counter;
                 ++new_counter.external_count;
-            } while (!head.compare_exchange_strong(old_counter, new_counter));
+            } while (!head.compare_exchange_strong(
+                    old_counter, new_counter, std::memory_order_acquire, std::memory_order_relaxed
+            ));
 
             old_counter.external_count = new_counter.external_count;
         }
@@ -214,30 +216,15 @@ namespace Bonostl {
             counted_node_ptr new_node;
             new_node.ptr = new node(data);
             new_node.external_count = 1;
-            new_node.ptr->next = head.load();
+            new_node.ptr->next = head.load(std::memory_order_relaxed);
 
-            while (!head.compare_exchange_weak(new_node.ptr->next, new_node));
-        }
-
-        std::shared_ptr<T> pop(T &result) {
-            ++threads_in_pop;
-
-            node *old_head = head.load();
-
-            while (old_head &&
-                   !head.compare_exchange_weak(old_head, old_head->next)
-                    );
-            std::shared_ptr<T> res;
-            if (old_head)
-                res.swap(old_head->data);
-
-            try_reclaim(old_head);
-
-            return res;
+            while (!head.compare_exchange_weak(
+                    new_node.ptr->next, new_node, std::memory_order_release, std::memory_order_relaxed
+            ));
         }
 
         std::shared_ptr<T> pop() {
-            counted_node_ptr old_head = head.load();
+            counted_node_ptr old_head = head.load(std::memory_order_relaxed);
 
             for (;;) {
                 increase_head_count(old_head);
@@ -246,17 +233,20 @@ namespace Bonostl {
                 if (!ptr) {
                     return std::shared_ptr<T>();
                 }
-                if (head.compare_exchange_strong(old_head, ptr->next)) {
+                if (head.compare_exchange_strong(
+                        old_head, ptr->next, std::memory_order_relaxed
+                )) {
                     std::shared_ptr<T> res;
                     res.swap(ptr->data);
 
                     int const count_increase = old_head.external_count - 2;
 
-                    if (ptr->internal_count.fetch_add(count_increase) == -count_increase) {
+                    if (ptr->internal_count.fetch_add(count_increase, std::memory_order_release) == -count_increase) {
                         delete ptr;
                     }
                     return res;
-                } else if (ptr->internal_count.fetch_sub(1) == 1) {
+                } else if (ptr->internal_count.fetch_add(-1, std::memory_order_relaxed) == 1) {
+                    ptr->internal_count.load(std::memory_order_acquire);
                     delete ptr;
                 }
             }
