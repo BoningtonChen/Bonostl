@@ -19,7 +19,7 @@ namespace Bonostl {
     };
 
 // hazard_pointer hazard_pointers[max_hazard_pointers];
-    std::vector<hazard_pointer> hazard_pointers;
+    std::array<hazard_pointer, max_hazard_pointers> hazard_pointers;
 
     class hp_owner {
     private:
@@ -64,7 +64,7 @@ namespace Bonostl {
         return hazard.get_pointer();
     }
 
-    bool outstanding_hazard_pointers_for(void* p) {
+    bool outstanding_hazard_pointers_for(void *p) {
 //    Old Version:
 //    for (auto & hazard_pointer : hazard_pointers)
 //    {
@@ -74,8 +74,8 @@ namespace Bonostl {
 //    return false;
         return std::any_of(
                 hazard_pointers.begin(), hazard_pointers.end(),
-                [&](auto &hazardPointer) { return hazardPointer.pointer.load() == p; }
-                );
+                [&](auto &hp) { return hp.pointer.load() == p; }
+        );
     }
 
     template<typename T>
@@ -131,13 +131,13 @@ namespace Bonostl {
     private:
         struct node {
             std::shared_ptr<T> data;
-            node *next;
+            std::shared_ptr<node> next;
 
             explicit node(T const &i_data)
                     : data(std::make_shared<T>(data)) {}
         };
 
-        std::atomic<node *> head;
+        std::shared_ptr<node> head;
         std::atomic<unsigned> threads_in_pop;
         std::atomic<node *> to_be_deleted;
 
@@ -186,11 +186,13 @@ namespace Bonostl {
         }
 
     public:
-        void push(T const &data) {
-            node *const new_node = new node(data);
-            new_node->next = head.load();
+        lock_free_stack() = default;
 
-            while (!head.compare_exchange_weak(new_node->next, new_node));
+        void push(T const &data) {
+            std::shared_ptr<node> const new_node = std::make_shared<node>(data);
+            new_node->next = std::atomic_load(&head);
+
+            while (!std::atomic_compare_exchange_weak(&head, &new_node->next, new_node));
         }
 
         std::shared_ptr<T> pop(T &result) {
@@ -211,35 +213,22 @@ namespace Bonostl {
         }
 
         std::shared_ptr<T> pop() {
-            std::atomic<void *> &hp = get_hazard_pointer_for_current_thread();
-            node *old_head = head.load();
+            std::shared_ptr<node> old_head = std::atomic_load(&head);
 
-            do {
-                node *temp;
-                do {
-                    temp = old_head;
-                    hp.store(old_head);
-                    old_head = head.load();
-                } while (old_head != temp);
-            } while (old_head &&
-                     !head.compare_exchange_strong(old_head, old_head->next)
-                    );
-
-            hp.store(nullptr);
-            std::shared_ptr<T> res;
+            while (old_head && !std::atomic_compare_exchange_weak(
+                    &head, &old_head, std::atomic_load(&old_head->next)
+            ));
 
             if (old_head) {
-                res.swap(old_head->data);
+                std::atomic_store(&old_head->next, std::shared_ptr<node>());
 
-                if (outstanding_hazard_pointers_for(old_head)) {
-                    reclaim_later(old_head);
-                } else {
-                    delete old_head;
-                }
-
-                delete_nodes_with_no_hazards();
+                return old_head->data;
             }
-            return res;
+            return std::shared_ptr<T>();
+        }
+
+        ~lock_free_stack() {
+            while (pop());
         }
     };
 
