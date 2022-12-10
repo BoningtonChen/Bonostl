@@ -24,6 +24,7 @@ A Bonity's C++ standard library.
   - queue
   - threadsafe_stack
   - threadsafe_queue
+  - threadsafe_lookup_table
   - spinlock_mutex
   - lock_free_stack
 
