@@ -127,7 +127,7 @@ namespace Bonostl
         {
             std::unique_ptr<node> old_head = pop_head();
 
-            return old_head ? old_head->data : std::shared_ptr<T>();
+            return old_head ? old_head -> data : std::shared_ptr<T>();
         }
 
         bool try_pop(T& value)

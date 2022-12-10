@@ -12,12 +12,14 @@
 namespace Bonostl
 {
 
-    struct empty_stack : std::exception {
+    struct empty_stack : std::exception
+    {
         [[nodiscard]] const char *what() const noexcept override;
     };
 
     template<typename T>
-    class threadsafe_stack {
+    class threadsafe_stack
+    {
     private:
         std::stack<T> data;
         mutable std::mutex m;
@@ -32,7 +34,7 @@ namespace Bonostl
             data = other.data;
         }
 
-        threadsafe_stack& operator=(const threadsafe_stack &) = delete;
+        threadsafe_stack& operator=(const threadsafe_stack& ) = delete;
 
         void push(T new_value)
         {
