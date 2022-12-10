@@ -13,7 +13,9 @@
 #include <vector>
 #include <stack>
 #include <queue>
+#include <list>
 #include <ranges>
+#include <unordered_map>
 
 #include <condition_variable>
 #include <future>
@@ -24,6 +26,9 @@
 #include <memory>
 #include <functional>
 #include <algorithm>
+
+#include <mutex>
+#include <shared_mutex>
 
 namespace Bonostl
 {
