@@ -24,7 +24,7 @@ namespace Bonostl
 
             if ( length < (2 * min_per_thread) )
             {
-                for ( ; (first != last) && !done.load(); first++ )
+                for (; (first != last) && !done.load(); first++ )
                 {
                     if (*first == match)
                     {
