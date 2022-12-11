@@ -23,6 +23,9 @@ set(INC_SRC
 
         ${INC_DIR}spinlock_mutex.hpp
         ${INC_DIR}lock_free_stack.hpp
+
+        ${INC_DIR}parallel_for_each.hpp
+        ${INC_DIR}parallel_find.hpp
         )
 
 add_executable(Bonostl ${INC_SRC} ${TEST_SRC})
