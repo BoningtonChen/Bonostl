@@ -19,14 +19,18 @@ A Bonity's C++ standard library.
 - The Bonostl library headers are all `.hpp` headers, which means you can simply include them in your own projects.
 
 ## Library Stuff
-- Containers
-  - bonostlpch(A dependency of a bunch of files included from C++ standard libraries)
+- bonostlpch(A dependency of a bunch of files included from C++ standard libraries)
+- Containers 
   - queue
   - threadsafe_stack
   - threadsafe_queue
   - threadsafe_lookup_table
-  - spinlock_mutex
   - lock_free_stack
+- Algorithms
+  - parallel_find
+  - parallel_for_each
+- Locks
+  - spinlock_mutex
 
 ## LICENSE
 Bonostl uses MIT License.

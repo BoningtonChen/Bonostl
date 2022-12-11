@@ -10,7 +10,7 @@
 
 namespace Bonostl
 {
-    template<typename Key, typename Value, typename Hash = std::hash<Key> >
+    template<typename Key, typename Value, typename Hash = std::hash<Key>>
     class threadsafe_lookup_table
     {
     private:
@@ -35,15 +35,16 @@ namespace Bonostl
             }
 
         public:
-            Value value_for(Key const& key, Value const& default_value)
+            Value value_for(Key const& key, Value const& default_value) const
             {
                 std::shared_lock<std::shared_mutex> lock(mutex);
                 bucket_iterator const found_entry = find_entry_for(key);
 
-                return ( found_entry == data.end() ) ? default_value : found_entry -> second;
+                return ( found_entry == data.end() ) ?
+                    default_value : found_entry -> second;
             }
 
-            void add_or_update(Key const& key, Value const& value) const
+            void add_or_update_mapping(Key const& key, Value const& value)
             {
                 std::unique_lock<std::shared_mutex> lock(mutex);
                 bucket_iterator const found_entry = find_entry_for(key);
@@ -70,7 +71,7 @@ namespace Bonostl
             }
         };
 
-        std::vector< std::unique_ptr<bucket_type> > buckets;
+        std::vector<std::unique_ptr<bucket_type>> buckets;
         Hash hasher;
 
         bucket_type& get_bucket(Key const& key) const
@@ -80,33 +81,9 @@ namespace Bonostl
             return *buckets[bucket_index];
         }
 
-        std::map<Key, Value> get_map() const
-        {
-            std::vector<std::unique_lock<std::shared_mutex> > locks;
-
-            for (unsigned i=0; i<buckets.size(); i++)
-            {
-                locks.push_back(
-                        std::unique_lock<std::shared_mutex>( buckets[i].mutex )
-                );
-            }
-
-            std::map<Key, Value> res;
-
-            for (unsigned i=0; i<buckets.size(); i++)
-            {
-                for (bucket_iterator it = buckets[i].data.begin(); it != buckets[i].data.end(); it++)
-                {
-                    res.insert(*it);
-                }
-            }
-
-            return res;
-        }
-
     public:
         typedef Key key_value;
-        typedef Value mapped_value;
+        typedef Value mapped_type;
         typedef Hash hash_type;
 
         explicit threadsafe_lookup_table(
@@ -122,7 +99,10 @@ namespace Bonostl
 
         threadsafe_lookup_table(threadsafe_lookup_table const& other) = delete;
 
-        threadsafe_lookup_table& operator=(threadsafe_lookup_table const& other) = delete;
+        threadsafe_lookup_table& operator=(
+                threadsafe_lookup_table const& other
+                )
+                        = delete;
 
         Value value_for( Key const& key,
                          Value const& default_value = Value() ) const
@@ -138,6 +118,27 @@ namespace Bonostl
         void remove_mapping(Key const& key)
         {
             get_bucket(key).remove_mapping(key);
+        }
+
+        std::map<Key, Value> get_map() const
+        {
+            std::vector<std::unique_lock<std::shared_mutex> > locks;
+
+            for (unsigned i=0; i<buckets.size(); i++)
+            {
+                locks.push_back( std::unique_lock<std::shared_mutex>( buckets[i].mutex ) );
+            }
+
+            std::map<Key, Value> res;
+            for (unsigned i=0; i<buckets.size(); i++)
+            {
+                for (auto it = buckets[i].data.begin(); it != buckets[i].data.end(); it++)
+                {
+                    res.insert(*it);
+                }
+            }
+
+            return res;
         }
     };
 }
