@@ -29,6 +29,7 @@ A Bonity's C++ standard library.
 - Algorithms
   - parallel_find
   - parallel_for_each
+  - parallel_partial_sum
 - Locks
   - spinlock_mutex
 

@@ -26,6 +26,7 @@ set(INC_SRC
 
         ${INC_DIR}parallel_for_each.hpp
         ${INC_DIR}parallel_find.hpp
+        ${INC_DIR}parallel_partial_sum.hpp
         )
 
 add_executable(Bonostl ${INC_SRC} ${TEST_SRC})
