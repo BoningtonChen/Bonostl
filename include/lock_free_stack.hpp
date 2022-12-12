@@ -103,7 +103,8 @@ namespace Bonostl
 
         template<typename T>
         explicit data_to_reclaim(T* p)
-                : data(p), deleter( &do_delete<T> ), next(0) {}
+                : data(p), deleter( &do_delete<T> ), next(nullptr)
+        {}
 
         ~data_to_reclaim()
         {
@@ -163,7 +164,8 @@ namespace Bonostl
             counted_node_ptr next;
 
             explicit node(T const& i_data)
-                    : data(std::make_shared<T>(data)), internal_count(0) {}
+                    : data(std::make_shared<T>(data)), internal_count(0)
+            {}
         };
 
         std::atomic<counted_node_ptr> head;
