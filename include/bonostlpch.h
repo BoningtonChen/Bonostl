@@ -27,11 +27,11 @@
 #include <memory>
 #include <functional>
 #include <algorithm>
+#include <numeric>
 
 #include <mutex>
 #include <shared_mutex>
+#include <barrier>
 
 namespace Bonostl
-{
-
-}
+{}
