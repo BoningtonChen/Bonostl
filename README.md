@@ -26,7 +26,7 @@ A Bonity's C++ standard library.
   - threadsafe_queue
   - threadsafe_lookup_table
   - threadsafe_list
-  - lock_free_stack
+  - lockfree_stack
 - Algorithms
   - parallel_find
   - parallel_for_each
