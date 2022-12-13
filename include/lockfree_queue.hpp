@@ -6,6 +6,8 @@
 #define BONOSTL_LOCKFREE_QUEUE_HPP
 
 #endif //BONOSTL_LOCKFREE_QUEUE_HPP
+#pragma once
+
 #include "bonostlpch.h"
 
 namespace Bonostl

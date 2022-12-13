@@ -6,6 +6,7 @@
 #define BONOSTL_LOCKFREE_STACK_HPP
 
 #endif //BONOSTL_LOCKFREE_STACK_HPP
+#pragma once
 
 #include "bonostlpch.h"
 

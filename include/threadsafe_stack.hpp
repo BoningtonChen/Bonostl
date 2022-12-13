@@ -6,6 +6,7 @@
 #define BONOSTL_THREADSAFE_STACK_HPP
 
 #endif //BONOSTL_THREADSAFE_STACK_HPP
+#pragma once
 
 #include "bonostlpch.h"
 

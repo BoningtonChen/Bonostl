@@ -6,6 +6,8 @@
 #define BONOSTL_PARALLEL_PARTIAL_SUM_HPP
 
 #endif //BONOSTL_PARALLEL_PARTIAL_SUM_HPP
+#pragma once
+
 #include "bonostlpch.h"
 #include "join_threads.hpp"
 

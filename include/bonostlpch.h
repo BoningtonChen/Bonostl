@@ -6,6 +6,7 @@
 #define BONOSTL_BONOSTLPCH_H
 
 #endif //BONOSTL_BONOSTLPCH_H
+#pragma once
 
 #include <iostream>
 
@@ -32,6 +33,8 @@
 #include <mutex>
 #include <shared_mutex>
 #include <barrier>
+
+#include <chrono>
 
 namespace Bonostl
 {}

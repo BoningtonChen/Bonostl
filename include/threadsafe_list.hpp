@@ -6,6 +6,8 @@
 #define BONOSTL_THREADSAFE_LIST_HPP
 
 #endif //BONOSTL_THREADSAFE_LIST_HPP
+#pragma once
+
 #include "bonostlpch.h"
 
 namespace Bonostl
