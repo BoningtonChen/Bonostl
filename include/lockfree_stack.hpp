@@ -2,10 +2,10 @@
 // Created by 陈奕锟 on 2022/12/3.
 //
 
-#ifndef BONOSTL_LOCK_FREE_STACK_HPP
-#define BONOSTL_LOCK_FREE_STACK_HPP
+#ifndef BONOSTL_LOCKFREE_STACK_HPP
+#define BONOSTL_LOCKFREE_STACK_HPP
 
-#endif //BONOSTL_LOCK_FREE_STACK_HPP
+#endif //BONOSTL_LOCKFREE_STACK_HPP
 
 #include "bonostlpch.h"
 
@@ -146,7 +146,7 @@ namespace Bonostl
 
 
     template<typename T>
-    class lock_free_stack
+    class lockfree_stack
     {
     private:
         struct node;
@@ -242,9 +242,9 @@ namespace Bonostl
         }
 
     public:
-        lock_free_stack() = default;
+        lockfree_stack() = default;
 
-        ~lock_free_stack()
+        ~lockfree_stack()
         {
             while ( pop() );
         }
