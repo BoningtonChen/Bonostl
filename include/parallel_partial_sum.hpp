@@ -7,28 +7,10 @@
 
 #endif //BONOSTL_PARALLEL_PARTIAL_SUM_HPP
 #include "bonostlpch.h"
+#include "join_threads.hpp"
 
 namespace Bonostl
 {
-    class join_threads
-    {
-    private:
-        std::vector<std::thread>& threads;
-
-    public:
-        explicit join_threads( std::vector<std::thread>& i_threads )
-                : threads(i_threads)
-        {}
-        ~join_threads()
-        {
-            for (auto& thread : threads)
-            {
-                if ( thread.joinable() )
-                    thread.join();
-            }
-        }
-    };
-
     template<typename Iterator>
     void parallel_partial_sum(Iterator first, Iterator last)
     {
