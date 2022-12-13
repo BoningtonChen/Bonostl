@@ -6,6 +6,8 @@
 #define BONOSTL_JOIN_THREADS_HPP
 
 #endif //BONOSTL_JOIN_THREADS_HPP
+#pragma once
+
 #include "bonostlpch.h"
 
 namespace Bonostl

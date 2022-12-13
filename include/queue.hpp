@@ -6,6 +6,7 @@
 #define BONOSTL_QUEUE_HPP
 
 #endif //BONOSTL_QUEUE_HPP
+#pragma once
 
 #include "bonostlpch.h"
 

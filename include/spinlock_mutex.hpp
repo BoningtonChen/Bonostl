@@ -6,6 +6,7 @@
 #define BONOSTL_SPINLOCK_MUTEX_HPP
 
 #endif //BONOSTL_SPINLOCK_MUTEX_HPP
+#pragma once
 
 #include "bonostlpch.h"
 

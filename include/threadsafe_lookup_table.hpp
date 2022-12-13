@@ -6,6 +6,8 @@
 #define BONOSTL_THREADSAFE_LOOKUP_TABLE_HPP
 
 #endif //BONOSTL_THREADSAFE_LOOKUP_TABLE_HPP
+#pragma once
+
 #include "bonostlpch.h"
 
 namespace Bonostl

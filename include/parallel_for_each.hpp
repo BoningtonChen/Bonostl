@@ -6,6 +6,8 @@
 #define BONOSTL_PARALLEL_FOR_EACH_HPP
 
 #endif //BONOSTL_PARALLEL_FOR_EACH_HPP
+#pragma once
+
 #include "bonostlpch.h"
 
 namespace Bonostl

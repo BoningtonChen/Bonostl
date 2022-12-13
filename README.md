@@ -27,10 +27,12 @@ A Bonity's C++ standard library.
   - threadsafe_lookup_table
   - threadsafe_list
   - lockfree_stack
+  - lockfree_queue
 - Algorithms
   - parallel_find
   - parallel_for_each
   - parallel_partial_sum
+  - parallel_quick_sort
 - Locks
   - spinlock_mutex
 
