@@ -64,7 +64,8 @@ namespace Bonostl
             return pop_head();
         }
 
-        std::unique_ptr<node> try_pop_head() {
+        std::unique_ptr<node> try_pop_head()
+        {
             std::lock_guard<std::mutex> head_lock(head_mutex);
 
             if (head.get() == get_tail())
@@ -73,7 +74,8 @@ namespace Bonostl
             return pop_head();
         }
 
-        std::unique_ptr<node> try_pop_head(T& value) {
+        std::unique_ptr<node> try_pop_head(T& value)
+        {
             std::lock_guard<std::mutex> head_lock(head_mutex);
 
             if ( head.get() == get_tail() )
