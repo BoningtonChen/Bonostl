@@ -8,6 +8,7 @@
 #endif //BONOSTL_BONOSTLPCH_H
 #pragma once
 
+/// C++ Standard Library Dependencies
 #include <iostream>
 
 #include <array>
@@ -35,6 +36,10 @@
 #include <barrier>
 
 #include <chrono>
+
+
+/// Boost Dependencies
+#include "smart_ptr/shared_ptr.hpp"
 
 namespace Bonostl
 {}

@@ -42,7 +42,7 @@ namespace Bonostl
 
         void try_sort_chunk()
         {
-            std::shared_ptr<chunk_to_sort> chunk = chunks.pop();
+            boost::shared_ptr<chunk_to_sort> chunk = chunks.pop();
             if (chunk)
                 sort_chunk(chunk);
         }
@@ -83,7 +83,7 @@ namespace Bonostl
             return result;
         }
 
-        void sort_chunk(std::shared_ptr<chunk_to_sort> const& chunk)
+        void sort_chunk(boost::shared_ptr<chunk_to_sort> const& chunk)
         {
             chunk -> promise.set_value( do_sort(chunk -> data) );
         }
