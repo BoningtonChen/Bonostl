@@ -1,4 +1,9 @@
 # Bonostl
+![Free Palestine](https://freepalestinemovement.org/wp-content/uploads/2013/06/banner.jpg)
+![Static Badge](https://img.shields.io/badge/License-MIT-blue)
+![Static Badge](https://img.shields.io/badge/Language-C++-green)
+![Static Badge](https://img.shields.io/badge/Reference_Library-Boost-red)
+
 
 ## Content
 <!-- TOC -->
