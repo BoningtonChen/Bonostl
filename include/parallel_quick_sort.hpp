@@ -71,7 +71,7 @@ namespace Bonostl
             chunks.push( std::move(new_lower_chunk) );
 
             if ( threads.size() < max_thread_count )
-                threads.push_back( std::thread(&sorter<T>::sort_thread, this) );
+                threads.push_back( std::thread(&sorter::sort_thread, this) );
 
             std::list<T> new_higher(do_sort(chunk_data) );
             result.splice( result.end(), new_higher );

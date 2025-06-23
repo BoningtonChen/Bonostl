@@ -39,14 +39,14 @@ namespace Bonostl
 
         void push(T new_value)
         {
-            std::lock_guard<std::mutex> lock(m);
+            std::lock_guard lock(m);
 
             data.push( std::move(new_value) );
         }
 
         std::shared_ptr<T> pop()
         {
-            std::lock_guard<std::mutex> lock(m);
+            std::lock_guard lock(m);
 
             if (data.empty()) throw empty_stack();
 
@@ -61,7 +61,7 @@ namespace Bonostl
 
         void pop(T& value)
         {
-            std::lock_guard<std::mutex> lock(m);
+            std::lock_guard lock(m);
 
             if (data.empty()) throw empty_stack();
 
@@ -71,7 +71,7 @@ namespace Bonostl
 
         bool empty() const
         {
-            std::lock_guard<std::mutex> lock(m);
+            std::lock_guard lock(m);
 
             return data.empty();
         }

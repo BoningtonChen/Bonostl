@@ -39,7 +39,7 @@ namespace Bonostl
         public:
             Value value_for(Key const& key, Value const& default_value) const
             {
-                std::shared_lock<std::shared_mutex> lock(mutex);
+                std::shared_lock lock(mutex);
                 bucket_iterator const found_entry = find_entry_for(key);
 
                 return ( found_entry == data.end() ) ?
@@ -48,7 +48,7 @@ namespace Bonostl
 
             void add_or_update_mapping(Key const& key, Value const& value)
             {
-                std::unique_lock<std::shared_mutex> lock(mutex);
+                std::unique_lock lock(mutex);
                 bucket_iterator const found_entry = find_entry_for(key);
 
                 if ( found_entry == data.end() )
@@ -63,7 +63,7 @@ namespace Bonostl
 
             void remove_mapping(Key const& key)
             {
-                std::unique_lock<std::shared_mutex> lock(mutex);
+                std::unique_lock lock(mutex);
                 bucket_iterator const found_entry = find_entry_for(key);
 
                 if ( found_entry != data.end() )
