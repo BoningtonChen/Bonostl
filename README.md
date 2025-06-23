@@ -64,4 +64,4 @@ SOFTWARE.
 ```
 
 ## Copyright
-© Bonity, 2022
+© Bonity, 2025
