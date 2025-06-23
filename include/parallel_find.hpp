@@ -62,7 +62,7 @@ namespace Bonostl
     template<typename Iterator, typename MatchType>
     Iterator parallel_find(Iterator first, Iterator last, MatchType match)
     {
-        std::atomic<bool> done(false);
+        std::atomic done(false);
 
         return parallel_find_impl(first, last, match, done);
     }

@@ -31,7 +31,7 @@ namespace Bonostl
 
         node* get_tail()
         {
-            std::lock_guard<std::mutex> tail_lock(tail_mutex);
+            std::lock_guard tail_lock(tail_mutex);
             return tail;
         }
 
@@ -45,7 +45,7 @@ namespace Bonostl
 
         std::unique_lock<std::mutex> wait_for_data()
         {
-            std::unique_lock<std::mutex> head_lock(head_mutex);
+            std::unique_lock head_lock(head_mutex);
             data_cond.wait(head_lock, [&] { return head.get() != get_tail(); });
 
             return std::move(head_lock);
@@ -53,13 +53,13 @@ namespace Bonostl
 
         std::unique_ptr<node> wait_pop_head()
         {
-            std::unique_lock<std::mutex> head_lock(wait_for_data());
+            std::unique_lock head_lock(wait_for_data());
             return pop_head();
         }
 
         std::unique_ptr<node> wait_pop_head(T& value)
         {
-            std::unique_lock<std::mutex> head_lock( wait_for_data() );
+            std::unique_lock head_lock( wait_for_data() );
             value = std::move( *head -> data);
 
             return pop_head();
@@ -67,7 +67,7 @@ namespace Bonostl
 
         std::unique_ptr<node> try_pop_head()
         {
-            std::lock_guard<std::mutex> head_lock(head_mutex);
+            std::lock_guard head_lock(head_mutex);
 
             if (head.get() == get_tail())
                 return std::unique_ptr<node>();
@@ -77,7 +77,7 @@ namespace Bonostl
 
         std::unique_ptr<node> try_pop_head(T& value)
         {
-            std::lock_guard<std::mutex> head_lock(head_mutex);
+            std::lock_guard head_lock(head_mutex);
 
             if ( head.get() == get_tail() )
                 return std::unique_ptr<node>();
@@ -104,7 +104,7 @@ namespace Bonostl
             std::unique_ptr<node> p(new node);
 
             {
-                std::lock_guard<std::mutex> tail_lock(tail_mutex);
+                std::lock_guard tail_lock(tail_mutex);
 
                 tail -> data = new_data;
                 node* const new_tail = p.get();
@@ -141,7 +141,7 @@ namespace Bonostl
 
         bool empty()
         {
-            std::lock_guard<std::mutex> head_lock(head_mutex);
+            std::lock_guard head_lock(head_mutex);
 
             return ( head.get() == get_tail() );
         }
