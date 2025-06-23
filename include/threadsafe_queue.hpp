@@ -143,7 +143,7 @@ namespace Bonostl
         {
             std::lock_guard head_lock(head_mutex);
 
-            return ( head.get() == get_tail() );
+            return head.get() == get_tail();
         }
     };
 

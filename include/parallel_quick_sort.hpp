@@ -42,8 +42,7 @@ namespace Bonostl
 
         void try_sort_chunk()
         {
-            boost::shared_ptr<chunk_to_sort> chunk = chunks.pop();
-            if (chunk)
+            if (boost::shared_ptr<chunk_to_sort> chunk = chunks.pop())
                 sort_chunk(chunk);
         }
 

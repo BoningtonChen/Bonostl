@@ -57,7 +57,7 @@ namespace Bonostl
                 do
                 {
                     new_counter = old_counter;
-                    (new_counter.internal_count)--;
+                    --new_counter.internal_count;
                 }
                 while (
                         !count.compare_exchange_strong(
@@ -90,7 +90,7 @@ namespace Bonostl
             do
             {
                 new_counter = old_counter;
-                (new_counter.external_count)++;
+                ++(new_counter.external_count);
             }
             while (
                     !counter.compare_exchange_strong(
@@ -114,7 +114,7 @@ namespace Bonostl
             do
             {
                 new_counter = old_counter;
-                (new_counter.external_counters)--;
+                --new_counter.external_counters;
                 new_counter.internal_count += count_increase;
             }
             while (
@@ -136,13 +136,14 @@ namespace Bonostl
             node* const current_tail_ptr = old_tail.ptr;
 
             while (
-                    !tail.compare_exchange_weak(old_tail, new_tail)
-                    && old_tail.ptr == current_tail_ptr
-                    );
-            if ( old_tail.ptr == current_tail_ptr )
-                free_external_counter(old_tail);
-            else
-                current_tail_ptr -> release_ref();
+                !tail.compare_exchange_weak(old_tail, new_tail)
+                && old_tail.ptr == current_tail_ptr
+                ) {
+                if ( old_tail.ptr == current_tail_ptr )
+                    free_external_counter(old_tail);
+                else
+                    current_tail_ptr -> release_ref();
+            }
         }
         
     public:

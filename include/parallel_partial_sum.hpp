@@ -28,7 +28,7 @@ namespace Bonostl
                 try
                 {
                     Iterator end = last;
-                    end++;
+                    ++end;
 
                     std::partial_sum(begin, end, begin);
 
@@ -64,7 +64,7 @@ namespace Bonostl
         if (!length)
             return;
 
-        unsigned long const min_per_thread = 25;
+        constexpr unsigned long min_per_thread = 25;
         unsigned long const max_threads = (length + min_per_thread - 1) / min_per_thread;
         unsigned long const hardware_threads = std::thread::hardware_concurrency();
         unsigned long const num_threads = std::min( hardware_threads != 0 ? hardware_threads : 2, max_threads );
@@ -97,7 +97,7 @@ namespace Bonostl
                     );
 
             block_start = block_last;
-            block_start++;
+            ++block_start;
 
             previous_end_values.push_back( end_values[i].get_future() );
         }
@@ -108,8 +108,8 @@ namespace Bonostl
 
         process_chunk() (
                 block_start, final_element,
-                (num_threads > 1) ? &previous_end_values.back() : 0,
-                0
+                num_threads > 1 ? &previous_end_values.back() : 0,
+                nullptr
                 );
     }
 }
