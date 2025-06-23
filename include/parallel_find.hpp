@@ -22,11 +22,11 @@ namespace Bonostl
         try
         {
             unsigned long const length = std::distance(first, last);
-            unsigned long const min_per_thread = 25;
+            constexpr unsigned long min_per_thread = 25;
 
             if ( length < (2 * min_per_thread) )
             {
-                for (; (first != last) && !done.load(); first++ )
+                for (; (first != last) && !done.load(); ++first )
                 {
                     if (*first == match)
                     {

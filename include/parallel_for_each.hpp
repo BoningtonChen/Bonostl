@@ -19,7 +19,7 @@ namespace Bonostl
         if (!length)
             return;
 
-        unsigned long const min_per_thread = 25;
+        constexpr unsigned long min_per_thread = 25;
         if ( length < (2 * min_per_thread) )
             std::for_each(first, last, func);
         else [[likely]]

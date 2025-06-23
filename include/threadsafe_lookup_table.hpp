@@ -134,7 +134,7 @@ namespace Bonostl
             std::map<Key, Value> res;
             for (unsigned i=0; i<buckets.size(); i++)
             {
-                for (auto it = buckets[i].data.begin(); it != buckets[i].data.end(); it++)
+                for (auto it = buckets[i].data.begin(); it != buckets[i].data.end(); ++it)
                 {
                     res.insert(*it);
                 }
