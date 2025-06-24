@@ -1,6 +1,6 @@
 # Bonostl
 ![Free Palestine](https://freepalestinemovement.org/wp-content/uploads/2013/06/banner.jpg)
-![Static Badge](https://img.shields.io/badge/Reference-Boost-red)
+![Static Badge](https://img.shields.io/badge/Reference-Boost-red?logo=Github)
 ![Static Badge](https://img.shields.io/badge/Language-C++-blue?logo=cplusplus)
 ![Static Badge](https://img.shields.io/badge/Built_by-CMake-darkgreen?logo=Cmake)
 ![Static Badge](https://img.shields.io/badge/License-MIT-green)
