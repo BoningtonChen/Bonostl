@@ -10,13 +10,13 @@
 
 ## Content
 <!-- TOC -->
-- [Bonostl](#bonostl)
-  - [Content](#content)
-  - [Description](#description)
-  - [Get Started](#get-started)
-  - [Library Stuff](#library-stuff)
-  - [LICENSE](#license)
-  - [Copyright](#copyright)
+* [Bonostl](#bonostl)
+  * [Content](#content)
+  * [Description](#description)
+  * [Get Started](#get-started)
+  * [Library Stuff](#library-stuff)
+  * [LICENSE](#license)
+  * [Copyright](#copyright)
 <!-- TOC -->
 
 ## Description
