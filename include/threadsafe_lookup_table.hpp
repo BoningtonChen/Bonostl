@@ -42,7 +42,7 @@ namespace Bonostl
                 std::shared_lock lock(mutex);
                 bucket_iterator const found_entry = find_entry_for(key);
 
-                return ( found_entry == data.end() ) ?
+                return found_entry == data.end() ?
                     default_value : found_entry -> second;
             }
 

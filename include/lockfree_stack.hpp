@@ -19,7 +19,7 @@ namespace Bonostl
         std::atomic<void*> pointer;
     };
 
-    inline std::array<hazard_pointer, max_hazard_pointers> hazard_pointers;
+    std::array<hazard_pointer, max_hazard_pointers> hazard_pointers;
 
     class hp_owner
     {
@@ -99,7 +99,7 @@ namespace Bonostl
         }
     };
 
-    inline std::atomic<data_to_reclaim*> nodes_to_reclaim;
+    std::atomic<data_to_reclaim*> nodes_to_reclaim;
 
     inline void add_to_reclaim_list(data_to_reclaim* node)
     {
