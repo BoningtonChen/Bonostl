@@ -1,0 +1,16 @@
+# Cmake generated folders
+/cmake*
+/build*
+
+# xmake generated folders
+/.xmake*
+
+# idea project files
+/.idea
+
+# third-party dependencies
+/dependencies
+
+# binary files
+*.exe
+*.obj
