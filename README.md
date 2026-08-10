@@ -29,13 +29,15 @@ covering parallel algorithms, thread-safe containers and lock-free data structur
 - The Bonostl library headers are all `.hpp` headers, which means you can simply include them in your own projects.
 
 ## Build
-The project supports both CMake and xmake build systems.
+The project supports both CMake and xmake build systems. It requires a C++26 compiler
+and links libatomic for 16-byte atomics on GCC/Clang.
 
 ### CMake
 ```bash
 cmake -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++
 cmake --build build
 ./build/bonostl_demo.exe
+ctest --test-dir build          # run the test suite
 ```
 
 ### xmake
@@ -43,7 +45,15 @@ cmake --build build
 xmake f --toolchain=gcc
 xmake
 ./build/windows/x64/release/bonostl_demo.exe
+xmake run bonostl_tests         # run the test suite
 ```
+
+## Testing
+The test suite uses Catch2 v3 and covers:
+- FIFO/LIFO ordering and empty states for all containers
+- Concurrent producer/consumer invariants (element counts and value sums)
+- Lock-free stack/queue stress tests with multiple threads
+- Parallel algorithms verified against their `std::` counterparts
 
 ## Library Stuff
 - bonostlpch(A dependency of a bunch of files included from C++ standard libraries)
@@ -62,6 +72,10 @@ xmake
   - parallel_quick_sort
 - Locks
   - spinlock_mutex
+
+> Note: `pop`-style operations return `std::optional<T>` instead of throwing or
+> returning null pointers. `threadsafe_lookup_table::value_for` also returns
+> `std::optional<Value>`.
 
 ## LICENSE
 Bonostl uses MIT License.
