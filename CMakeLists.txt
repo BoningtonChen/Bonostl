@@ -1,47 +1,44 @@
-cmake_minimum_required(VERSION 3.24)
-project(Bonostl CXX)
+cmake_minimum_required(VERSION 3.28)
 
-set(CMAKE_CXX_STANDARD 23)
+project(Bonostl
+        VERSION 2.0.0
+        DESCRIPTION "A header-only C++26 concurrency library"
+        LANGUAGES CXX)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++23 -O2")
+set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-include_directories(
-        # * Boost dependencies INC_DIR
-        dependencies/Boost
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
+endif()
 
-        # * Project INC_DIR
-        include
-        dependencies/Boost/boost
-)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(INC_DIR include)
-set(SRC_DIR src)
+option(BONOSTL_BUILD_DEMO "Build the Bonostl demo program" ON)
 
-set(TEST_SRC
-        ${SRC_DIR}/main.cpp
-        )
+add_library(Bonostl INTERFACE)
+add_library(Bonostl::Bonostl ALIAS Bonostl)
 
-set(INC_SRC
-        ${INC_DIR}/bonostlpch.h
+target_include_directories(Bonostl INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>)
 
-        ${INC_DIR}/join_threads.hpp
-        ${INC_DIR}/spinlock_mutex.hpp
+if(MSVC)
+    target_compile_options(Bonostl INTERFACE /W4 /permissive-)
+else()
+    target_compile_options(Bonostl INTERFACE -Wall -Wextra)
+endif()
 
-        ${INC_DIR}/queue.hpp
-        ${INC_DIR}/threadsafe_stack.hpp
-        ${INC_DIR}/threadsafe_queue.hpp
-        ${INC_DIR}/threadsafe_lookup_table.hpp
-        ${INC_DIR}/threadsafe_list.hpp
+if(BONOSTL_BUILD_DEMO)
+    add_executable(bonostl_demo src/main.cpp)
+    target_link_libraries(bonostl_demo PRIVATE Bonostl::Bonostl)
+endif()
 
-        ${INC_DIR}/lockfree_stack.hpp
-        ${INC_DIR}/lockfree_queue.hpp
-
-        ${INC_DIR}/parallel_for_each.hpp
-        ${INC_DIR}/parallel_find.hpp
-        ${INC_DIR}/parallel_partial_sum.hpp
-        ${INC_DIR}/parallel_quick_sort.hpp
-        )
-
-add_executable(Bonostl ${INC_SRC} ${TEST_SRC})
-
-target_precompile_headers(Bonostl PUBLIC ${INC_DIR}/bonostlpch.h)
+include(GNUInstallDirs)
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(TARGETS Bonostl EXPORT BonostlTargets)
+install(EXPORT BonostlTargets
+        FILE BonostlConfig.cmake
+        NAMESPACE Bonostl::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Bonostl)
