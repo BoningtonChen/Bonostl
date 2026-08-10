@@ -16,7 +16,6 @@
 #include <numeric>
 #include <optional>
 #include <ranges>
-#include <shared_mutex>
 #include <stack>
 #include <thread>
 #include <utility>
