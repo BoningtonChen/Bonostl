@@ -8,6 +8,10 @@
 # idea project files
 /.idea
 
+# local tool indexes
+/.codegraph
+/.code-review-graph
+
 # third-party dependencies
 /dependencies
 
