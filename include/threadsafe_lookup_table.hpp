@@ -1,11 +1,3 @@
-//
-// Created by 陈奕锟 on 2022/12/10.
-//
-
-#ifndef BONOSTL_THREADSAFE_LOOKUP_TABLE_HPP
-#define BONOSTL_THREADSAFE_LOOKUP_TABLE_HPP
-
-#endif //BONOSTL_THREADSAFE_LOOKUP_TABLE_HPP
 #pragma once
 
 #include "bonostlpch.h"
@@ -19,97 +11,95 @@ namespace Bonostl
         class bucket_type
         {
         private:
-            typedef std::pair<Key, Value> bucket_value;
-            typedef std::list<bucket_value> bucket_data;
-            typedef typename bucket_data::iterator bucket_iterator;
-
-            bucket_data data;
-            mutable std::shared_mutex mutex;
-
-            bucket_iterator find_entry_for(Key const& key) const
-            {
-                return std::find_if(
-                        data.begin(), data.end(),
-                        [&] (bucket_value const& item)
-                        {
-                            return item.first == key;
-                        });
-            }
+            using bucket_value = std::pair<Key, Value>;
+            using bucket_data = std::list<bucket_value>;
 
         public:
-            Value value_for(Key const& key, Value const& default_value) const
+            std::optional<Value> value_for(Key const& key) const
             {
-                std::shared_lock lock(mutex);
-                bucket_iterator const found_entry = find_entry_for(key);
+                std::shared_lock lock(mutex_);
 
-                return found_entry == data.end() ?
-                    default_value : found_entry -> second;
+                auto const found_entry = find_entry_for(key);
+                return found_entry == data_.end()
+                    ? std::nullopt
+                    : std::optional<Value>(found_entry->second);
             }
 
             void add_or_update_mapping(Key const& key, Value const& value)
             {
-                std::unique_lock lock(mutex);
-                bucket_iterator const found_entry = find_entry_for(key);
+                std::unique_lock lock(mutex_);
+                auto const found_entry = find_entry_for(key);
 
-                if ( found_entry == data.end() )
+                if (found_entry == data_.end())
                 {
-                    data.push_back( bucket_value(key, value) );
+                    data_.emplace_back(key, value);
                 }
-                else [[likely]]
+                else
                 {
-                    found_entry -> second = value;
+                    found_entry->second = value;
                 }
             }
 
             void remove_mapping(Key const& key)
             {
-                std::unique_lock lock(mutex);
-                bucket_iterator const found_entry = find_entry_for(key);
+                std::unique_lock lock(mutex_);
+                auto const found_entry = find_entry_for(key);
 
-                if ( found_entry != data.end() )
+                if (found_entry != data_.end())
                 {
-                    data.erase(found_entry);
+                    data_.erase(found_entry);
                 }
             }
+
+            std::map<Key, Value> snapshot() const
+            {
+                std::shared_lock lock(mutex_);
+                return {data_.begin(), data_.end()};
+            }
+
+        private:
+            using bucket_iterator = typename bucket_data::iterator;
+            using bucket_const_iterator = typename bucket_data::const_iterator;
+
+            bucket_iterator find_entry_for(Key const& key)
+            {
+                return std::ranges::find_if(data_, [&](bucket_value const& item) {
+                    return item.first == key;
+                });
+            }
+
+            bucket_const_iterator find_entry_for(Key const& key) const
+            {
+                return std::ranges::find_if(data_, [&](bucket_value const& item) {
+                    return item.first == key;
+                });
+            }
+
+            bucket_data data_;
+            mutable std::shared_mutex mutex_;
         };
 
-        std::vector<std::unique_ptr<bucket_type>> buckets;
-        Hash hasher;
-
-        bucket_type& get_bucket(Key const& key) const
-        {
-            std::size_t const bucket_index = hasher(key) % buckets.size();
-
-            return *buckets[bucket_index];
-        }
-
     public:
-        typedef Key key_value;
-        typedef Value mapped_type;
-        typedef Hash hash_type;
+        using key_type = Key;
+        using mapped_type = Value;
+        using hash_type = Hash;
 
         explicit threadsafe_lookup_table(
-                unsigned num_buckets = 19, Hash const& hasher_i = Hash()
-        )
-                : buckets(num_buckets), hasher(hasher_i)
+            unsigned num_buckets = 19, Hash const& hasher = Hash())
+            : buckets_(num_buckets), hasher_(hasher)
         {
-            for (unsigned i=0; i<num_buckets; i++)
+            for (auto& bucket : buckets_)
             {
-                buckets[i].reset(new bucket_type);
+                bucket = std::make_unique<bucket_type>();
             }
         }
 
-        threadsafe_lookup_table(threadsafe_lookup_table const& other) = delete;
+        threadsafe_lookup_table(const threadsafe_lookup_table&) = delete;
+        threadsafe_lookup_table& operator=(const threadsafe_lookup_table&) = delete;
 
-        threadsafe_lookup_table& operator=(
-                threadsafe_lookup_table const& other
-                )
-                        = delete;
-
-        Value value_for( Key const& key,
-                         Value const& default_value = Value() ) const
+        std::optional<Value> value_for(Key const& key) const
         {
-            return get_bucket(key).value_for(key, default_value);
+            return get_bucket(key).value_for(key);
         }
 
         void add_or_update_mapping(Key const& key, Value const& value)
@@ -124,23 +114,24 @@ namespace Bonostl
 
         std::map<Key, Value> get_map() const
         {
-            std::vector<std::unique_lock<std::shared_mutex> > locks;
+            std::map<Key, Value> result;
 
-            for (unsigned i=0; i<buckets.size(); i++)
+            for (auto const& bucket : buckets_)
             {
-                locks.push_back( std::unique_lock<std::shared_mutex>( buckets[i].mutex ) );
+                result.merge(bucket->snapshot());
             }
 
-            std::map<Key, Value> res;
-            for (unsigned i=0; i<buckets.size(); i++)
-            {
-                for (auto it = buckets[i].data.begin(); it != buckets[i].data.end(); ++it)
-                {
-                    res.insert(*it);
-                }
-            }
-
-            return res;
+            return result;
         }
+
+    private:
+        bucket_type& get_bucket(Key const& key) const
+        {
+            std::size_t const bucket_index = hasher_(key) % buckets_.size();
+            return *buckets_[bucket_index];
+        }
+
+        std::vector<std::unique_ptr<bucket_type>> buckets_;
+        Hash hasher_;
     };
 }
