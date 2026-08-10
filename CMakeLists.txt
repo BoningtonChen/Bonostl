@@ -33,6 +33,7 @@ endif()
 if(BONOSTL_BUILD_DEMO)
     add_executable(bonostl_demo src/main.cpp)
     target_link_libraries(bonostl_demo PRIVATE Bonostl::Bonostl)
+    target_precompile_headers(bonostl_demo PRIVATE include/bonostlpch.h)
 endif()
 
 include(GNUInstallDirs)
