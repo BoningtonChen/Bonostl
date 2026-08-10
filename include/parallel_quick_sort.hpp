@@ -50,9 +50,23 @@ namespace Bonostl
             auto const divide_point = std::partition(chunk_data.begin(), chunk_data.end(),
                                                      [&](T const& val) { return val < partition_val; });
 
+            if (divide_point == chunk_data.begin())
+            {
+                chunk_data.sort();
+                result.splice(result.end(), chunk_data);
+                return result;
+            }
+
             chunk_to_sort new_lower_chunk;
             new_lower_chunk.data.splice(
                 new_lower_chunk.data.end(), chunk_data, chunk_data.begin(), divide_point);
+
+            if (chunk_data.empty())
+            {
+                new_lower_chunk.data.sort();
+                result.splice(result.begin(), new_lower_chunk.data);
+                return result;
+            }
 
             std::future<std::list<T>> new_lower = new_lower_chunk.promise.get_future();
             chunks.push(std::move(new_lower_chunk));
