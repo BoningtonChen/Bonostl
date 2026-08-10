@@ -10,6 +10,9 @@ option("tests", {default = true, description = "Build the Bonostl test suite"})
 target("Bonostl")
     set_kind("headeronly")
     add_includedirs("include", {public = true})
+    if is_plat("linux") or is_config("toolchain", "gcc", "clang") then
+        add_syslinks("atomic", {public = true})
+    end
 
 if has_config("demo") then
     target("bonostl_demo")

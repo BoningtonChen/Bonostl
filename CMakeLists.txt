@@ -30,6 +30,11 @@ else()
     target_compile_options(Bonostl INTERFACE -Wall -Wextra)
 endif()
 
+# 16-byte atomics (std::atomic<counted_node_ptr>) need libatomic on GCC/Clang
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_link_libraries(Bonostl INTERFACE atomic)
+endif()
+
 if(BONOSTL_BUILD_DEMO)
     add_executable(bonostl_demo src/main.cpp)
     target_link_libraries(bonostl_demo PRIVATE Bonostl::Bonostl)
