@@ -1,0 +1,6 @@
+# clangd (scoop LLVM) 默认 target 是 x86_64-pc-windows-msvc，
+# 用 MSVC 模式解析 MinGW 头文件会失败（iostream file not found、std::to_string 等假报错）。
+# 强制 GNU target，让 clangd 自动探测 MinGW 标准库（via PATH 上的 g++）。
+CompileFlags:
+  Add:
+    - "--target=x86_64-w64-windows-gnu"
