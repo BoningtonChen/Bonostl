@@ -105,4 +105,4 @@ SOFTWARE.
 ```
 
 ## Copyright
-© Bonity, 2025
+© Cle2ment, 2025
