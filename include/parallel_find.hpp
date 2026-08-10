@@ -1,11 +1,3 @@
-//
-// Created by 陈奕锟 on 2022/12/11.
-//
-
-#ifndef BONOSTL_PARALLEL_FIND_HPP
-#define BONOSTL_PARALLEL_FIND_HPP
-
-#endif //BONOSTL_PARALLEL_FIND_HPP
 #pragma once
 
 #include "bonostlpch.h"
@@ -13,24 +5,20 @@
 namespace Bonostl
 {
     template<typename Iterator, typename MatchType>
-    Iterator parallel_find_impl(
-            Iterator first, Iterator last,
-            MatchType match,
-            std::atomic<bool>& done
-    )
+    Iterator parallel_find_impl(Iterator first, Iterator last, MatchType match, std::atomic<bool>& done)
     {
         try
         {
             unsigned long const length = std::distance(first, last);
             constexpr unsigned long min_per_thread = 25;
 
-            if ( length < (2 * min_per_thread) )
+            if (length < (2 * min_per_thread))
             {
-                for (; (first != last) && !done.load(); ++first )
+                for (; first != last && !done.load(std::memory_order_relaxed); ++first)
                 {
                     if (*first == match)
                     {
-                        done = true;
+                        done.store(true, std::memory_order_relaxed);
                         return first;
                     }
                 }
@@ -39,22 +27,18 @@ namespace Bonostl
             else [[likely]]
             {
                 Iterator const mid_point = first + (length / 2);
-                std::future<Iterator> async_result =
-                        std::async(
-                                &parallel_find_impl<Iterator, MatchType>,
-                                mid_point, last,
-                                match, std::ref(done)
-                        );
+                std::future<Iterator> async_result = std::async([&] {
+                    return parallel_find_impl(mid_point, last, match, done);
+                });
 
-                Iterator const direct_result =
-                        parallel_find_impl(first, mid_point, match, done);
+                Iterator const direct_result = parallel_find_impl(first, mid_point, match, done);
 
                 return (direct_result == mid_point) ? async_result.get() : direct_result;
             }
         }
         catch (...)
         {
-            done = true;
+            done.store(true, std::memory_order_relaxed);
             throw;
         }
     }
@@ -62,7 +46,7 @@ namespace Bonostl
     template<typename Iterator, typename MatchType>
     Iterator parallel_find(Iterator first, Iterator last, MatchType match)
     {
-        std::atomic<> done(false);
+        std::atomic<bool> done(false);
 
         return parallel_find_impl(first, last, match, done);
     }
