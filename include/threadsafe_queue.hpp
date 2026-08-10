@@ -67,13 +67,13 @@ namespace Bonostl
             std::unique_ptr<node> next;
         };
 
-        std::mutex head_mutex_;
+        mutable std::mutex head_mutex_;
         std::unique_ptr<node> head;
-        std::mutex tail_mutex_;
+        mutable std::mutex tail_mutex_;
         node* tail;
         std::condition_variable data_cond_;
 
-        node* get_tail()
+        node* get_tail() const
         {
             std::lock_guard tail_lock(tail_mutex_);
             return tail;
