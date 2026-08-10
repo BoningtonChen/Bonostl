@@ -1,8 +1,8 @@
 # Bonostl
 ![Free Palestine](https://freepalestinemovement.org/wp-content/uploads/2013/06/banner.jpg)
-![Static Badge](https://img.shields.io/badge/Reference-Boost-red?logo=Github)
-![Static Badge](https://img.shields.io/badge/Language-C++-blue?logo=cplusplus)
+![Static Badge](https://img.shields.io/badge/Language-C%2B%2B26-blue?logo=cplusplus)
 ![Static Badge](https://img.shields.io/badge/Built_by-CMake-darkgreen?logo=Cmake)
+![Static Badge](https://img.shields.io/badge/Built_by-xmake-blue?logo=xmake)
 ![Static Badge](https://img.shields.io/badge/License-MIT-green)
 
 
@@ -14,17 +14,36 @@
   * [Content](#content)
   * [Description](#description)
   * [Get Started](#get-started)
+  * [Build](#build)
   * [Library Stuff](#library-stuff)
   * [LICENSE](#license)
   * [Copyright](#copyright)
 <!-- TOC -->
 
 ## Description
-A Bonity's C++ standard library.
+A Bonity's C++ standard library — a header-only concurrency library implemented in C++26,
+covering parallel algorithms, thread-safe containers and lock-free data structures.
 
 ## Get Started
 - You can use `git clone https://github.com/BoningtonChen/Bonostl` to clone the repository.
 - The Bonostl library headers are all `.hpp` headers, which means you can simply include them in your own projects.
+
+## Build
+The project supports both CMake and xmake build systems.
+
+### CMake
+```bash
+cmake -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++
+cmake --build build
+./build/bonostl_demo.exe
+```
+
+### xmake
+```bash
+xmake f --toolchain=gcc
+xmake
+./build/windows/x64/release/bonostl_demo.exe
+```
 
 ## Library Stuff
 - bonostlpch(A dependency of a bunch of files included from C++ standard libraries)
