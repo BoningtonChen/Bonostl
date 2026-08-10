@@ -20,3 +20,7 @@ if has_config("demo") then
         add_deps("Bonostl")
         add_files("src/main.cpp")
 end
+
+if has_config("tests") then
+    includes("tests/xmake.lua")
+end
