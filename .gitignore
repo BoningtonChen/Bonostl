@@ -22,7 +22,5 @@
 # clangd compilation database (xmake generated)
 /compile_commands.json
 
-# VS Code editor settings (keep shared configs only)
+# VS Code editor settings (editor-specific, never shared)
 .vscode/
-!.vscode/c_cpp_properties.json
-!.vscode/extensions.json
