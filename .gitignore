@@ -1,5 +1,6 @@
 # Cmake generated folders
 /cmake*
+!/CMakePresets.json
 /build*
 
 # xmake generated folders
@@ -24,3 +25,10 @@
 
 # VS Code editor settings (editor-specific, never shared)
 .vscode/
+
+# Visual Studio local state and CMake preset output
+/.vs
+/out
+
+# xmake-generated Visual Studio projects (regenerate: xmake project -k vsxmake2026)
+/vsxmake*/
