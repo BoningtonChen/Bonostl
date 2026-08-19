@@ -45,6 +45,20 @@ xmake
 xmake run bonostl_tests         # run the test suite
 ```
 
+### Visual Studio
+Both build systems work inside Visual Studio without changing the toolchain
+(MinGW GCC is still the compiler in both cases):
+
+- **CMake (Open Folder)**: `File > Open > Folder...` on the project root.
+  Visual Studio reads `CMakePresets.json` and offers the `mingw-debug` /
+  `mingw-release` presets for configure, build and test (CTest).
+- **xmake (solution)**: open `vsxmake2026/Bonostl.sln`. The projects wrap
+  xmake commands, so Build/Rebuild/Clean run `xmake` under the hood.
+  Regenerate after changing `xmake.lua`:
+  ```bash
+  xmake project -k vsxmake2026 -m "debug,release"
+  ```
+
 ## Testing
 The test suite uses Catch2 v3 and covers:
 - FIFO/LIFO ordering and empty states for all containers
