@@ -10,6 +10,7 @@ option("tests", {default = true, description = "Build the Bonostl test suite"})
 target("Bonostl")
     set_kind("headeronly")
     add_includedirs("include", {public = true})
+    add_headerfiles("include/*.h", "include/*.hpp")
     if is_plat("linux") or is_config("toolchain", "gcc", "clang") then
         add_syslinks("atomic", {public = true})
     end
