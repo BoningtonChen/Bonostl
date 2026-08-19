@@ -52,12 +52,15 @@ Both build systems work inside Visual Studio without changing the toolchain
 - **CMake (Open Folder)**: `File > Open > Folder...` on the project root.
   Visual Studio reads `CMakePresets.json` and offers the `mingw-debug` /
   `mingw-release` presets for configure, build and test (CTest).
-- **xmake (solution)**: open `vsxmake2026/Bonostl.sln`. The projects wrap
+- **xmake (solution)**: open `vsxmake2026/Bonostl.slnx`. The projects wrap
   xmake commands, so Build/Rebuild/Clean run `xmake` under the hood.
   Regenerate after changing `xmake.lua`:
   ```bash
   xmake project -k vsxmake2026 -m "debug,release"
+  dotnet sln vsxmake2026/Bonostl.sln migrate   # upgrade to .slnx
   ```
+  Set `bonostl_demo` (or `bonostl_tests`) as the startup project before
+  running — the `Bonostl` target is a header-only library with no executable.
 
 ## Testing
 The test suite uses Catch2 v3 and covers:
