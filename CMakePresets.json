@@ -11,7 +11,6 @@
             "hidden": true,
             "generator": "MinGW Makefiles",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "intelliSenseMode": "windows-gcc-x64",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "gcc",
                 "CMAKE_CXX_COMPILER": "g++",
