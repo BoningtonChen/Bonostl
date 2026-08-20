@@ -23,6 +23,9 @@
 # clangd compilation database (xmake generated)
 /compile_commands.json
 
+# clangd local cache
+/.cache/
+
 # VS Code editor settings (editor-specific, never shared)
 .vscode/
 
