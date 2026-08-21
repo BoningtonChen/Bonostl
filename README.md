@@ -80,6 +80,7 @@ The test suite uses Catch2 v3 and covers:
   - lockfree_stack
   - lockfree_queue
 - Algorithms
+  - parallel_accumulate
   - parallel_find
   - parallel_for_each
   - parallel_partial_sum

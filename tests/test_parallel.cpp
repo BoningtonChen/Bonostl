@@ -1,11 +1,13 @@
 #include <catch_amalgamated.hpp>
 
 #include <algorithm>
+#include <functional>
 #include <list>
 #include <numeric>
 #include <random>
 #include <vector>
 
+#include "parallel_accumulate.hpp"
 #include "parallel_find.hpp"
 #include "parallel_for_each.hpp"
 #include "parallel_partial_sum.hpp"
@@ -120,4 +122,42 @@ TEST_CASE("parallel_quick_sort: handles duplicates and edge sizes", "[parallel]"
 
     std::list<int> empty;
     REQUIRE(Bonostl::parallel_quick_sort(std::move(empty)).empty());
+}
+
+TEST_CASE("parallel_accumulate: matches std::accumulate on large random vector", "[parallel]")
+{
+    std::vector<int> data = make_random_vector(10000, 6);
+
+    int const expected = std::accumulate(data.begin(), data.end(), 0);
+    int const actual = Bonostl::parallel_accumulate(data.begin(), data.end(), 0);
+
+    REQUIRE(actual == expected);
+}
+
+TEST_CASE("parallel_accumulate: empty range returns init", "[parallel]")
+{
+    std::vector<int> empty;
+
+    REQUIRE(Bonostl::parallel_accumulate(empty.begin(), empty.end(), 42) == 42);
+}
+
+TEST_CASE("parallel_accumulate: custom binary op", "[parallel]")
+{
+    std::vector<int> data = make_random_vector(5000, 7);
+
+    int const expected = std::accumulate(data.begin(), data.end(), 1, std::multiplies<>());
+    int const actual =
+        Bonostl::parallel_accumulate(data.begin(), data.end(), 1, std::multiplies<>());
+
+    REQUIRE(actual == expected);
+}
+
+TEST_CASE("parallel_accumulate: small range below 2*min_per_thread", "[parallel]")
+{
+    std::vector<int> data = make_random_vector(30, 8);
+
+    int const expected = std::accumulate(data.begin(), data.end(), 0);
+    int const actual = Bonostl::parallel_accumulate(data.begin(), data.end(), 0);
+
+    REQUIRE(actual == expected);
 }
