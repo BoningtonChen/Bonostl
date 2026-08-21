@@ -13,6 +13,7 @@
 #include "parallel_for_each.hpp"
 #include "parallel_partial_sum.hpp"
 #include "parallel_quick_sort.hpp"
+#include "parallel_merge_sort.hpp"
 #include "parallel_predicates.hpp"
 #include "parallel_scan.hpp"
 #include "parallel_transform.hpp"
@@ -350,4 +351,69 @@ TEST_CASE("parallel_inclusive_scan: custom op", "[parallel]")
     Bonostl::parallel_inclusive_scan(data.begin(), data.end(), result.begin(), mulmod);
 
     REQUIRE(result == reference);
+}
+
+TEST_CASE("parallel_merge_sort: matches std::stable_sort", "[parallel]")
+{
+    std::vector<int> data = make_random_vector(5000, 41);
+    std::vector<int> reference = data;
+
+    Bonostl::parallel_merge_sort(data.begin(), data.end());
+    std::stable_sort(reference.begin(), reference.end());
+
+    REQUIRE(data == reference);
+}
+
+TEST_CASE("parallel_merge_sort: sorted, reversed and equal inputs", "[parallel]")
+{
+    std::vector<int> sorted(5000);
+    std::iota(sorted.begin(), sorted.end(), 0);
+
+    std::vector<int> reversed(sorted.rbegin(), sorted.rend());
+    std::vector<int> all_equal(5000, 42);
+
+    Bonostl::parallel_merge_sort(sorted.begin(), sorted.end());
+    Bonostl::parallel_merge_sort(reversed.begin(), reversed.end());
+    Bonostl::parallel_merge_sort(all_equal.begin(), all_equal.end());
+
+    REQUIRE(std::is_sorted(sorted.begin(), sorted.end()));
+    REQUIRE(std::is_sorted(reversed.begin(), reversed.end()));
+    REQUIRE(std::is_sorted(all_equal.begin(), all_equal.end()));
+}
+
+TEST_CASE("parallel_merge_sort: empty, single and small ranges", "[parallel]")
+{
+    std::vector<int> data;
+    Bonostl::parallel_merge_sort(data.begin(), data.end());
+    REQUIRE(data.empty());
+
+    data = {42};
+    Bonostl::parallel_merge_sort(data.begin(), data.end());
+    REQUIRE(data == std::vector<int>{42});
+
+    data = make_random_vector(100, 42);
+    Bonostl::parallel_merge_sort(data.begin(), data.end());
+    REQUIRE(std::is_sorted(data.begin(), data.end()));
+}
+
+TEST_CASE("parallel_merge_sort: stability", "[parallel]")
+{
+    std::vector<std::pair<int, int>> data(5000);
+    for (std::size_t i = 0; i < data.size(); ++i)
+    {
+        data[i] = {static_cast<int>(i % 50), static_cast<int>(i)};
+    }
+
+    Bonostl::parallel_merge_sort(data.begin(), data.end());
+
+    REQUIRE(std::is_sorted(data.begin(), data.end(),
+                           [](auto const& a, auto const& b) { return a.first < b.first; }));
+
+    for (std::size_t i = 1; i < data.size(); ++i)
+    {
+        if (data[i - 1].first == data[i].first)
+        {
+            REQUIRE(data[i - 1].second < data[i].second);
+        }
+    }
 }
