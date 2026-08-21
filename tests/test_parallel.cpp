@@ -14,6 +14,7 @@
 #include "parallel_partial_sum.hpp"
 #include "parallel_quick_sort.hpp"
 #include "parallel_predicates.hpp"
+#include "parallel_scan.hpp"
 #include "parallel_transform.hpp"
 
 namespace
@@ -270,4 +271,83 @@ TEST_CASE("parallel predicates: empty range semantics", "[parallel]")
     REQUIRE_FALSE(Bonostl::parallel_any_of(data.begin(), data.end(), any));
     REQUIRE(Bonostl::parallel_none_of(data.begin(), data.end(), any));
     REQUIRE(Bonostl::parallel_count_if(data.begin(), data.end(), any) == 0);
+}
+
+TEST_CASE("parallel_inclusive_scan: matches std::inclusive_scan", "[parallel]")
+{
+    std::vector<int> data = make_random_vector(5000, 31);
+    std::vector<int> result(data.size());
+    std::vector<int> reference(data.size());
+
+    std::inclusive_scan(data.begin(), data.end(), reference.begin());
+    auto const out_end = Bonostl::parallel_inclusive_scan(data.begin(), data.end(), result.begin());
+
+    REQUIRE(out_end == result.end());
+    REQUIRE(result == reference);
+}
+
+TEST_CASE("parallel_exclusive_scan: matches std::exclusive_scan", "[parallel]")
+{
+    std::vector<int> data = make_random_vector(5000, 32);
+    std::vector<int> result(data.size());
+    std::vector<int> reference(data.size());
+
+    std::exclusive_scan(data.begin(), data.end(), reference.begin(), 100);
+    auto const out_end =
+        Bonostl::parallel_exclusive_scan(data.begin(), data.end(), result.begin(), 100);
+
+    REQUIRE(out_end == result.end());
+    REQUIRE(result == reference);
+}
+
+TEST_CASE("parallel scan: empty and small ranges", "[parallel]")
+{
+    std::vector<int> empty;
+    std::vector<int> empty_out;
+
+    REQUIRE(Bonostl::parallel_inclusive_scan(empty.begin(), empty.end(), empty_out.begin())
+            == empty_out.begin());
+    REQUIRE(Bonostl::parallel_exclusive_scan(empty.begin(), empty.end(), empty_out.begin(), 7)
+            == empty_out.begin());
+
+    std::vector<int> data = make_random_vector(30, 33);
+    std::vector<int> result(data.size());
+    std::vector<int> reference(data.size());
+
+    std::inclusive_scan(data.begin(), data.end(), reference.begin());
+    Bonostl::parallel_inclusive_scan(data.begin(), data.end(), result.begin());
+    REQUIRE(result == reference);
+}
+
+TEST_CASE("parallel scan: in-place", "[parallel]")
+{
+    std::vector<int> const source = make_random_vector(5000, 34);
+
+    std::vector<int> data = source;
+    std::vector<int> ref_inc(source.size());
+    std::inclusive_scan(source.begin(), source.end(), ref_inc.begin());
+    Bonostl::parallel_inclusive_scan(data.begin(), data.end(), data.begin());
+    REQUIRE(data == ref_inc);
+
+    std::vector<int> data2 = source;
+    std::vector<int> ref_exc(source.size());
+    std::exclusive_scan(source.begin(), source.end(), ref_exc.begin(), 5);
+    Bonostl::parallel_exclusive_scan(data2.begin(), data2.end(), data2.begin(), 5);
+    REQUIRE(data2 == ref_exc);
+}
+
+TEST_CASE("parallel_inclusive_scan: custom op", "[parallel]")
+{
+    auto const mulmod = [](int a, int b) {
+        return static_cast<int>((static_cast<long long>(a) * b) % 1000003);
+    };
+
+    std::vector<int> data = make_random_vector(5000, 35);
+    std::vector<int> result(data.size());
+    std::vector<int> reference(data.size());
+
+    std::inclusive_scan(data.begin(), data.end(), reference.begin(), mulmod);
+    Bonostl::parallel_inclusive_scan(data.begin(), data.end(), result.begin(), mulmod);
+
+    REQUIRE(result == reference);
 }
