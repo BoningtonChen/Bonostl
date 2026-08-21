@@ -88,6 +88,8 @@ The test suite uses Catch2 v3 and covers:
   - spinlock_mutex
 - Utilities
   - hazard_ptr (hazard-pointer reclamation helpers for lock-free containers)
+- Thread pool
+  - function_wrapper (move-only type-erased task wrapper)
 
 > Note: `pop`-style operations return `std::optional<T>` instead of throwing or
 > returning null pointers. `threadsafe_lookup_table::value_for` also returns

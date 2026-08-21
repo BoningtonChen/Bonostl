@@ -6,6 +6,7 @@ target("bonostl_tests")
         "test_queue.cpp",
         "test_lockfree.cpp",
         "test_parallel.cpp",
+        "test_threadpool.cpp",
         "third_party/catch_amalgamated.cpp")
     on_run(function (target)
         os.exec(target:targetfile())
