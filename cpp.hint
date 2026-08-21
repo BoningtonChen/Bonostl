@@ -1,0 +1,24 @@
+// Visual Studio IntelliSense macro hint file.
+// Catch2's TEST_CASE family expands into complex registration machinery that
+// the browsing engine cannot parse, which makes browsing operations (Go To
+// Definition, Find All References, ...) around these macros fail. Defining
+// them here as opaque/empty macros keeps IntelliSense working in the test
+// bodies. This file is only a hint for the IDE; it never participates in the
+// build.
+#define TEST_CASE(...)
+#define SECTION(...)
+#define REQUIRE(...)
+#define REQUIRE_FALSE(...)
+#define REQUIRE_THROWS(...)
+#define REQUIRE_THROWS_AS(...)
+#define REQUIRE_NOTHROW(...)
+#define CHECK(...)
+#define CHECK_FALSE(...)
+#define CHECK_THROWS(...)
+#define CHECK_THROWS_AS(...)
+#define CHECK_NOTHROW(...)
+#define INFO(...)
+#define CAPTURE(...)
+#define WARN(...)
+#define FAIL(...)
+#define SUCCEED(...)
