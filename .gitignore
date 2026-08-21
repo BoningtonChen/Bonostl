@@ -12,6 +12,7 @@
 # local tool indexes
 /.codegraph
 /.code-review-graph
+/.cortexkit
 
 # third-party dependencies
 /dependencies
