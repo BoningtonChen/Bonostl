@@ -86,6 +86,7 @@ The test suite uses Catch2 v3 and covers:
   - parallel_for_each
   - parallel_partial_sum
   - parallel_quick_sort
+  - parallel_transform
 - Locks
   - spinlock_mutex
 - Utilities

@@ -1,6 +1,7 @@
 #include <catch_amalgamated.hpp>
 
 #include <algorithm>
+#include <deque>
 #include <functional>
 #include <list>
 #include <numeric>
@@ -12,6 +13,7 @@
 #include "parallel_for_each.hpp"
 #include "parallel_partial_sum.hpp"
 #include "parallel_quick_sort.hpp"
+#include "parallel_transform.hpp"
 
 namespace
 {
@@ -160,4 +162,63 @@ TEST_CASE("parallel_accumulate: small range below 2*min_per_thread", "[parallel]
     int const actual = Bonostl::parallel_accumulate(data.begin(), data.end(), 0);
 
     REQUIRE(actual == expected);
+}
+
+TEST_CASE("parallel_transform: matches std::transform on large vector", "[parallel]")
+{
+    std::vector<int> data = make_random_vector(5000, 9);
+    std::vector<int> result(data.size());
+    std::vector<int> reference(data.size());
+
+    std::transform(data.begin(), data.end(), reference.begin(),
+                   [](int v) { return v * 2 + 1; });
+    auto const out_end = Bonostl::parallel_transform(data.begin(), data.end(), result.begin(),
+                                                     [](int v) { return v * 2 + 1; });
+
+    REQUIRE(out_end == result.end());
+    REQUIRE(result == reference);
+}
+
+TEST_CASE("parallel_transform: empty range returns out unchanged", "[parallel]")
+{
+    std::vector<int> data;
+    std::vector<int> out(3, 7);
+
+    auto const out_it = Bonostl::parallel_transform(data.begin(), data.end(), out.begin(),
+                                                    [](int v) { return v * 2 + 1; });
+
+    REQUIRE(out_it == out.begin());
+    REQUIRE(out == std::vector<int>({7, 7, 7}));
+}
+
+TEST_CASE("parallel_transform: writes into a different random-access container", "[parallel]")
+{
+    // std::list's iterators are not random-access, so the parallel transform
+    // requires a random-access output container (std::deque here).
+    std::vector<int> data = make_random_vector(3000, 10);
+    std::deque<int> result(data.size());
+    std::deque<int> reference(data.size());
+
+    std::transform(data.begin(), data.end(), reference.begin(),
+                   [](int v) { return v + 1; });
+    auto const out_end = Bonostl::parallel_transform(data.begin(), data.end(), result.begin(),
+                                                     [](int v) { return v + 1; });
+
+    REQUIRE(out_end == result.end());
+    REQUIRE(result == reference);
+}
+
+TEST_CASE("parallel_transform: small range uses single-threaded path", "[parallel]")
+{
+    std::vector<int> data = make_random_vector(30, 11);
+    std::vector<int> result(data.size());
+    std::vector<int> reference(data.size());
+
+    std::transform(data.begin(), data.end(), reference.begin(),
+                   [](int v) { return v * 3; });
+    auto const out_end = Bonostl::parallel_transform(data.begin(), data.end(), result.begin(),
+                                                     [](int v) { return v * 3; });
+
+    REQUIRE(out_end == result.end());
+    REQUIRE(result == reference);
 }
