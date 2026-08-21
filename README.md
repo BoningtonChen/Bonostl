@@ -80,6 +80,7 @@ The test suite uses Catch2 v3 and covers:
   - threadsafe_list
   - lockfree_stack
   - lockfree_queue
+  - lockfree_list (Harris-Michael ordered set, hazard-pointer reclaimed)
 - Algorithms
   - parallel_accumulate
   - parallel_find
