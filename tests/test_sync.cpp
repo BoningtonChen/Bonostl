@@ -5,6 +5,9 @@
 #include <thread>
 #include <vector>
 
+#include "barrier.hpp"
+#include "latch.hpp"
+#include "semaphore.hpp"
 #include "seqlock.hpp"
 #include "shared_spinlock.hpp"
 
@@ -182,4 +185,134 @@ TEST_CASE("shared_spinlock: try_lock_shared fails while writer holds", "[sync]")
 
     REQUIRE(lock.try_lock_shared());
     lock.unlock_shared();
+}
+
+TEST_CASE("counting_semaphore: limits concurrency", "[sync]")
+{
+    Bonostl::counting_semaphore semaphore(2);
+    std::atomic<int> inside{0};
+    std::atomic<int> max_inside{0};
+
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 8; ++t)
+    {
+        threads.emplace_back([&] {
+            semaphore.acquire();
+
+            int const now = inside.fetch_add(1, std::memory_order_acq_rel) + 1;
+            int expected = max_inside.load(std::memory_order_relaxed);
+            while (now > expected
+                   && !max_inside.compare_exchange_weak(expected, now,
+                                                        std::memory_order_relaxed))
+            {
+            }
+
+            std::this_thread::yield();
+            inside.fetch_sub(1, std::memory_order_acq_rel);
+            semaphore.release();
+        });
+    }
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    REQUIRE(max_inside.load() <= 2);
+    REQUIRE(max_inside.load() >= 1);
+}
+
+TEST_CASE("counting_semaphore: try_acquire fails when exhausted", "[sync]")
+{
+    Bonostl::counting_semaphore semaphore(1);
+
+    REQUIRE(semaphore.try_acquire());
+    REQUIRE_FALSE(semaphore.try_acquire());
+
+    semaphore.release();
+    REQUIRE(semaphore.try_acquire());
+}
+
+TEST_CASE("binary_semaphore: handoff between threads", "[sync]")
+{
+    Bonostl::binary_semaphore semaphore;
+    std::atomic<bool> produced{false};
+
+    std::thread producer([&] {
+        produced.store(true, std::memory_order_release);
+        semaphore.release();
+    });
+
+    semaphore.acquire();
+    REQUIRE(produced.load());
+    producer.join();
+}
+
+TEST_CASE("latch: wait returns after all arrivals", "[sync]")
+{
+    Bonostl::latch latch(4);
+    std::atomic<int> started{0};
+
+    std::vector<std::thread> workers;
+    for (int t = 0; t < 4; ++t)
+    {
+        workers.emplace_back([&] {
+            started.fetch_add(1, std::memory_order_acq_rel);
+            latch.count_down();
+        });
+    }
+
+    latch.wait();
+    REQUIRE(started.load() == 4);
+
+    for (auto& worker : workers)
+    {
+        worker.join();
+    }
+}
+
+TEST_CASE("latch: try_wait before and after", "[sync]")
+{
+    Bonostl::latch latch(1);
+
+    REQUIRE_FALSE(latch.try_wait());
+    latch.count_down();
+    REQUIRE(latch.try_wait());
+}
+
+TEST_CASE("barrier: phases align across threads", "[sync]")
+{
+    constexpr int thread_count = 4;
+    constexpr int phases = 3;
+
+    std::atomic<int> completions{0};
+    Bonostl::barrier barrier(thread_count, [&] { ++completions; });
+    std::vector<std::atomic<int>> phase_of(thread_count);
+    for (auto& phase : phase_of)
+    {
+        phase.store(0);
+    }
+
+    std::vector<std::thread> threads;
+    for (int t = 0; t < thread_count; ++t)
+    {
+        threads.emplace_back([&, t] {
+            for (int p = 1; p <= phases; ++p)
+            {
+                phase_of[t].store(p, std::memory_order_release);
+                barrier.arrive_and_wait();
+
+                // After the barrier, every thread must have reached phase p.
+                for (int j = 0; j < thread_count; ++j)
+                {
+                    REQUIRE(phase_of[j].load(std::memory_order_acquire) >= p);
+                }
+            }
+        });
+    }
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    REQUIRE(completions.load() == phases);
 }

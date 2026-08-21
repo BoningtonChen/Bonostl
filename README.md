@@ -94,6 +94,10 @@ The test suite uses Catch2 v3 and covers:
   - spinlock_mutex
   - shared_spinlock (reader-writer spin lock; std::shared_lock compatible)
   - seqlock (read-optimistic; readers never block)
+- Synchronization (educational; prefer the std equivalents in production)
+  - counting_semaphore / binary_semaphore (cf. std::counting_semaphore, C++20)
+  - latch (cf. std::latch, C++20)
+  - barrier (cf. std::barrier, C++20)
 - Utilities
   - hazard_ptr (hazard-pointer reclamation helpers for lock-free containers)
 - Thread pool
