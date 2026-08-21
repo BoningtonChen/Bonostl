@@ -4,6 +4,8 @@
 
 namespace Bonostl
 {
+    /// Single-threaded queue backed by a dummy-node linked list.
+    /// NOT thread-safe: use threadsafe_queue or lockfree_queue for concurrent access.
     template<typename T>
     class queue
     {

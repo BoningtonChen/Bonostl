@@ -72,7 +72,7 @@ The test suite uses Catch2 v3 and covers:
 ## Library Stuff
 - bonostlpch(A dependency of a bunch of files included from C++ standard libraries)
 - Containers 
-  - queue
+  - queue (single-threaded; use threadsafe_queue or lockfree_queue for concurrency)
   - threadsafe_stack
   - threadsafe_queue
   - threadsafe_lookup_table
