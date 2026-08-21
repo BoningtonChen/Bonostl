@@ -86,6 +86,8 @@ The test suite uses Catch2 v3 and covers:
   - parallel_quick_sort
 - Locks
   - spinlock_mutex
+- Utilities
+  - hazard_ptr (hazard-pointer reclamation helpers for lock-free containers)
 
 > Note: `pop`-style operations return `std::optional<T>` instead of throwing or
 > returning null pointers. `threadsafe_lookup_table::value_for` also returns
