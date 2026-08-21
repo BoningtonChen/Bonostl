@@ -85,18 +85,10 @@ namespace Bonostl
             return result;
         }
 
-    private:
-        void worker_thread(unsigned index)
-        {
-            my_index = index;
-            local_work_queue = queues_[index].get();
-
-            while (!done_.load())
-            {
-                run_pending_task();
-            }
-        }
-
+        /// Runs one pending task if available (local queue, then shared queue,
+        /// then stolen). Algorithms waiting on a pool future should call this
+        /// in their wait loop so blocked workers still make progress
+        /// (wait-while-helping).
         void run_pending_task()
         {
             function_wrapper task;
@@ -116,6 +108,18 @@ namespace Bonostl
             else
             {
                 std::this_thread::yield();
+            }
+        }
+
+    private:
+        void worker_thread(unsigned index)
+        {
+            my_index = index;
+            local_work_queue = queues_[index].get();
+
+            while (!done_.load())
+            {
+                run_pending_task();
             }
         }
 
@@ -151,4 +155,12 @@ namespace Bonostl
         static inline thread_local work_stealing_queue* local_work_queue = nullptr;
         static inline thread_local unsigned my_index = 0;
     };
+
+    /// Process-wide default pool shared by the pool-based parallel algorithms.
+    /// Lazily constructed on first use; lives until program exit.
+    inline thread_pool& default_thread_pool()
+    {
+        static thread_pool pool;
+        return pool;
+    }
 }
