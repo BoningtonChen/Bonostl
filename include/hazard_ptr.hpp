@@ -95,6 +95,8 @@ namespace Bonostl
 
     inline std::atomic<data_to_reclaim*> nodes_to_reclaim;
 
+    inline std::atomic<unsigned> reclaim_nodes_count = 0;
+
     inline void add_to_reclaim_list(data_to_reclaim* node)
     {
         node->next = nodes_to_reclaim.load(std::memory_order_acquire);
@@ -103,12 +105,6 @@ namespace Bonostl
                 node->next, node, std::memory_order_release, std::memory_order_relaxed))
         {
         }
-    }
-
-    template<typename T>
-    void reclaim_later(T* data)
-    {
-        add_to_reclaim_list(new data_to_reclaim(data));
     }
 
     inline void delete_nodes_with_no_hazards()
@@ -129,6 +125,19 @@ namespace Bonostl
             }
 
             current = next;
+        }
+    }
+
+    template<typename T>
+    void reclaim_later(T* data)
+    {
+        add_to_reclaim_list(new data_to_reclaim(data));
+
+        if (reclaim_nodes_count.fetch_add(1, std::memory_order_relaxed) + 1
+            >= max_hazard_pointers * 2)
+        {
+            reclaim_nodes_count.store(0, std::memory_order_relaxed);
+            delete_nodes_with_no_hazards();
         }
     }
 }
