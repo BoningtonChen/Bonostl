@@ -81,6 +81,7 @@ The test suite uses Catch2 v3 and covers:
   - lockfree_stack
   - lockfree_queue
   - lockfree_list (Harris-Michael ordered set, hazard-pointer reclaimed)
+  - concurrent_skip_list (lazy skip list; ordered set, epoch-reclaimed)
 - Algorithms
   - parallel_accumulate
   - parallel_find

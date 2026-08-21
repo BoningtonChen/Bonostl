@@ -17,6 +17,7 @@
 #include <new>
 #include <numeric>
 #include <optional>
+#include <random>
 #include <ranges>
 #include <stack>
 #include <thread>

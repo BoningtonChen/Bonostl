@@ -8,6 +8,7 @@
 #include "lockfree_list.hpp"
 #include "lockfree_queue.hpp"
 #include "lockfree_stack.hpp"
+#include "concurrent_skip_list.hpp"
 
 TEST_CASE("lockfree_stack: LIFO order and empty state", "[lockfree]")
 {
@@ -335,4 +336,146 @@ TEST_CASE("lockfree_list: concurrent insert and erase of the same keys", "[lockf
     REQUIRE(std::is_sorted(seen.begin(), seen.end()));
     REQUIRE(std::adjacent_find(seen.begin(), seen.end()) == seen.end());
     REQUIRE(seen.size() <= key_range);
+}
+
+TEST_CASE("concurrent_skip_list: sequential insert, contains, erase keep order", "[lockfree]")
+{
+    Bonostl::concurrent_skip_list<int> list;
+
+    REQUIRE(list.empty());
+
+    for (int v : {5, 1, 9, 3, 7})
+    {
+        REQUIRE(list.insert(v));
+    }
+
+    REQUIRE_FALSE(list.empty());
+    REQUIRE(list.contains(3));
+    REQUIRE_FALSE(list.contains(4));
+    REQUIRE_FALSE(list.insert(5));
+
+    std::vector<int> seen;
+    list.for_each([&](int v) { seen.push_back(v); });
+    REQUIRE(seen == std::vector<int>{1, 3, 5, 7, 9});
+
+    REQUIRE(list.erase(5));
+    REQUIRE_FALSE(list.contains(5));
+    REQUIRE_FALSE(list.erase(5));
+
+    seen.clear();
+    list.for_each([&](int v) { seen.push_back(v); });
+    REQUIRE(seen == std::vector<int>{1, 3, 7, 9});
+}
+
+TEST_CASE("concurrent_skip_list: concurrent disjoint inserts", "[lockfree]")
+{
+    Bonostl::concurrent_skip_list<int> list;
+
+    constexpr int per_thread = 500;
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 4; ++t)
+    {
+        threads.emplace_back([&, t] {
+            for (int i = 0; i < per_thread; ++i)
+            {
+                list.insert(t * per_thread + i);
+            }
+        });
+    }
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    for (int v = 0; v < 4 * per_thread; ++v)
+    {
+        REQUIRE(list.contains(v));
+    }
+
+    std::vector<int> seen;
+    list.for_each([&](int v) { seen.push_back(v); });
+    REQUIRE(seen.size() == 4 * per_thread);
+    REQUIRE(std::is_sorted(seen.begin(), seen.end()));
+}
+
+TEST_CASE("concurrent_skip_list: concurrent erase", "[lockfree]")
+{
+    Bonostl::concurrent_skip_list<int> list;
+
+    constexpr int total = 2000;
+    for (int v = 0; v < total; ++v)
+    {
+        list.insert(v);
+    }
+
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 4; ++t)
+    {
+        threads.emplace_back([&, t] {
+            int const lo = t * (total / 4);
+            int const hi = lo + total / 4;
+            for (int v = lo; v < hi; ++v)
+            {
+                if (v % 2 == 0)
+                {
+                    list.erase(v);
+                }
+            }
+        });
+    }
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    for (int v = 0; v < total; ++v)
+    {
+        REQUIRE(list.contains(v) == ((v % 2) != 0));
+    }
+}
+
+TEST_CASE("concurrent_skip_list: mixed insert/erase stress", "[lockfree]")
+{
+    Bonostl::concurrent_skip_list<int> list;
+
+    constexpr int per_thread = 500;
+    std::atomic<int> inserted{0};
+    std::atomic<int> erased{0};
+
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 4; ++t)
+    {
+        threads.emplace_back([&, t] {
+            for (int i = 0; i < per_thread; ++i)
+            {
+                if (list.insert(t * per_thread + i))
+                {
+                    ++inserted;
+                }
+            }
+            for (int i = 0; i < per_thread; i += 2)
+            {
+                if (list.erase(t * per_thread + i))
+                {
+                    ++erased;
+                }
+            }
+        });
+    }
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    REQUIRE(inserted.load() == 4 * per_thread);
+    REQUIRE(erased.load() == 2 * per_thread);
+
+    for (int t = 0; t < 4; ++t)
+    {
+        for (int i = 0; i < per_thread; ++i)
+        {
+            bool const should_exist = (i % 2) != 0;
+            REQUIRE(list.contains(t * per_thread + i) == should_exist);
+        }
+    }
 }
