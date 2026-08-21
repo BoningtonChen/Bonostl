@@ -8,6 +8,9 @@ namespace Bonostl
     template<typename Iterator, typename MatchType>
     Iterator parallel_find_impl(Iterator first, Iterator last, MatchType match, std::atomic<bool>& done)
     {
+        static_assert(std::random_access_iterator<Iterator>,
+                      "parallel_find requires a random-access iterator");
+
         try
         {
             unsigned long const length = std::distance(first, last);

@@ -8,7 +8,7 @@ namespace Bonostl
     template<typename Iterator>
     void parallel_partial_sum(Iterator first, Iterator last)
     {
-        using value_type = typename Iterator::value_type;
+        using value_type = std::iter_value_t<Iterator>;
 
         struct process_chunk
         {

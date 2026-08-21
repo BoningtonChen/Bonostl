@@ -12,6 +12,9 @@ namespace Bonostl
     template<typename Iterator, typename Func>
     void parallel_for_each(Iterator first, Iterator last, Func func)
     {
+        static_assert(std::random_access_iterator<Iterator>,
+                      "parallel_for_each requires a random-access iterator");
+
         unsigned long const length = std::distance(first, last);
 
         if (length == 0)
