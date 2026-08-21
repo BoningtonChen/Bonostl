@@ -5,6 +5,7 @@
 #include <thread>
 #include <vector>
 
+#include "blocking_queue.hpp"
 #include "queue.hpp"
 #include "threadsafe_list.hpp"
 #include "threadsafe_lookup_table.hpp"
@@ -313,4 +314,125 @@ TEST_CASE("threadsafe_list: concurrent push_front", "[list]")
     std::size_t count = 0;
     list.for_each([&](int) { ++count; });
     REQUIRE(count == 4000);
+}
+
+TEST_CASE("blocking_queue: FIFO order and empty state", "[queue]")
+{
+    Bonostl::blocking_queue<int> q(4);
+
+    REQUIRE_FALSE(q.try_pop().has_value());
+    REQUIRE(q.empty());
+    REQUIRE(q.size() == 0);
+    REQUIRE(q.capacity() == 4);
+
+    REQUIRE(q.try_push(1));
+    REQUIRE(q.try_push(2));
+    REQUIRE(q.try_push(3));
+
+    REQUIRE(q.size() == 3);
+    REQUIRE_FALSE(q.empty());
+
+    REQUIRE(*q.try_pop() == 1);
+    REQUIRE(*q.try_pop() == 2);
+    REQUIRE(*q.try_pop() == 3);
+    REQUIRE_FALSE(q.try_pop().has_value());
+    REQUIRE(q.empty());
+}
+
+TEST_CASE("blocking_queue: capacity limit and invalid capacity", "[queue]")
+{
+    REQUIRE_THROWS_AS(Bonostl::blocking_queue<int>(0), std::invalid_argument);
+
+    Bonostl::blocking_queue<int> q(2);
+
+    REQUIRE(q.try_push(1));
+    REQUIRE(q.try_push(2));
+    REQUIRE_FALSE(q.try_push(3));
+    REQUIRE(q.size() == 2);
+    REQUIRE_FALSE(q.empty());
+
+    REQUIRE(*q.try_pop() == 1);
+    REQUIRE(q.try_push(3));
+    REQUIRE(q.size() == 2);
+}
+
+TEST_CASE("blocking_queue: concurrent producer/consumer with backpressure", "[queue]")
+{
+    Bonostl::blocking_queue<int> q(4);
+    constexpr int per_producer = 2000;
+
+    std::atomic<bool> stop{false};
+    std::atomic<int> popped{0};
+
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 4; ++t)
+    {
+        threads.emplace_back([&, t] {
+            for (int i = 0; i < per_producer; ++i)
+            {
+                q.push(t * per_producer + i);
+            }
+        });
+    }
+
+    std::atomic<int> observed{0};
+    for (int t = 0; t < 4; ++t)
+    {
+        threads.emplace_back([&] {
+            while (!stop.load())
+            {
+                if (auto value = q.try_pop())
+                {
+                    observed.fetch_add(*value);
+                    ++popped;
+                }
+                else
+                {
+                    std::this_thread::yield();
+                }
+            }
+        });
+    }
+
+    for (int t = 0; t < 4; ++t)
+    {
+        threads[t].join();
+    }
+
+    while (popped.load() < 4 * per_producer)
+    {
+        std::this_thread::yield();
+    }
+    stop = true;
+
+    for (int t = 4; t < 8; ++t)
+    {
+        threads[t].join();
+    }
+
+    REQUIRE(popped == 4 * per_producer);
+
+    int expected_sum = 0;
+    for (int t = 0; t < 4; ++t)
+    {
+        for (int i = 0; i < per_producer; ++i)
+        {
+            expected_sum += t * per_producer + i;
+        }
+    }
+    REQUIRE(observed == expected_sum);
+    REQUIRE(q.empty());
+}
+
+TEST_CASE("blocking_queue: wait_and_pop blocks until push", "[queue]")
+{
+    Bonostl::blocking_queue<int> q(4);
+
+    std::thread producer([&] {
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        q.push(42);
+    });
+
+    REQUIRE(q.wait_and_pop() == 42);
+    producer.join();
 }

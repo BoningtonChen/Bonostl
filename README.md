@@ -75,6 +75,7 @@ The test suite uses Catch2 v3 and covers:
   - queue (single-threaded; use threadsafe_queue or lockfree_queue for concurrency)
   - threadsafe_stack
   - threadsafe_queue
+  - blocking_queue (bounded, blocking push/pop for backpressure)
   - threadsafe_lookup_table
   - threadsafe_list
   - lockfree_stack
