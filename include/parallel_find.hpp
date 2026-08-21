@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bonostlpch.h"
+#include "thread_pool.hpp"
 
 namespace Bonostl
 {
@@ -27,11 +28,23 @@ namespace Bonostl
             else [[likely]]
             {
                 Iterator const mid_point = first + (length / 2);
-                std::future<Iterator> async_result = std::async([&] {
+
+                if (done.load(std::memory_order_relaxed))
+                {
+                    return last;
+                }
+
+                thread_pool& pool = default_thread_pool();
+                std::future<Iterator> async_result = pool.submit([mid_point, last, match, &done] {
                     return parallel_find_impl(mid_point, last, match, done);
                 });
 
                 Iterator const direct_result = parallel_find_impl(first, mid_point, match, done);
+
+                while (async_result.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+                {
+                    pool.run_pending_task();
+                }
 
                 return (direct_result == mid_point) ? async_result.get() : direct_result;
             }
