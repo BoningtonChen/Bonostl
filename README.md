@@ -92,6 +92,7 @@ The test suite uses Catch2 v3 and covers:
   - parallel_merge_sort (stable)
 - Locks
   - spinlock_mutex
+  - shared_spinlock (reader-writer spin lock; std::shared_lock compatible)
   - seqlock (read-optimistic; readers never block)
 - Utilities
   - hazard_ptr (hazard-pointer reclamation helpers for lock-free containers)
