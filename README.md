@@ -91,6 +91,7 @@ The test suite uses Catch2 v3 and covers:
 - Thread pool
   - function_wrapper (move-only type-erased task wrapper)
   - work_stealing_queue
+  - thread_pool (work-stealing thread pool with per-thread local queues)
 
 > Note: `pop`-style operations return `std::optional<T>` instead of throwing or
 > returning null pointers. `threadsafe_lookup_table::value_for` also returns

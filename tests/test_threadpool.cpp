@@ -2,11 +2,13 @@
 
 #include <atomic>
 #include <functional>
+#include <future>
 #include <memory>
 #include <thread>
 #include <vector>
 
 #include "function_wrapper.hpp"
+#include "thread_pool.hpp"
 #include "work_stealing_queue.hpp"
 
 TEST_CASE("function_wrapper: invokes wrapped callable", "[threadpool]")
@@ -151,4 +153,63 @@ TEST_CASE("work_stealing_queue: concurrent push/pop/steal executes each task onc
     }
 
     REQUIRE(executed == total);
+}
+
+TEST_CASE("thread_pool: submit returns future with correct result", "[threadpool]")
+{
+    Bonostl::thread_pool pool;
+
+    auto future = pool.submit([] { return 42; });
+
+    REQUIRE(future.get() == 42);
+}
+
+TEST_CASE("thread_pool: concurrent submits all execute", "[threadpool]")
+{
+    Bonostl::thread_pool pool;
+    constexpr int total = 1000;
+    std::atomic<int> executed{0};
+
+    std::vector<std::future<void>> futures;
+    for (int i = 0; i < total; ++i)
+    {
+        futures.push_back(pool.submit([&] { ++executed; }));
+    }
+    for (auto& future : futures)
+    {
+        future.get();
+    }
+
+    REQUIRE(executed == total);
+}
+
+TEST_CASE("thread_pool: nested submit from worker executes without deadlock", "[threadpool]")
+{
+    Bonostl::thread_pool pool(4);
+    std::atomic<int> inner{0};
+
+    auto outer = pool.submit([&] {
+        auto inner_future = pool.submit([&] { ++inner; });
+        inner_future.get();
+    });
+    outer.get();
+
+    REQUIRE(inner == 1);
+}
+
+TEST_CASE("thread_pool: destructor joins all threads", "[threadpool]")
+{
+    std::atomic<int> executed{0};
+    {
+        Bonostl::thread_pool pool;
+        auto future = pool.submit([&] { ++executed; });
+        future.get();
+    }
+
+    REQUIRE(executed == 1);
+}
+
+TEST_CASE("thread_pool: empty pool destructs cleanly", "[threadpool]")
+{
+    Bonostl::thread_pool pool;
 }
