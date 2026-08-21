@@ -92,6 +92,7 @@ The test suite uses Catch2 v3 and covers:
   - parallel_merge_sort (stable)
 - Locks
   - spinlock_mutex
+  - seqlock (read-optimistic; readers never block)
 - Utilities
   - hazard_ptr (hazard-pointer reclamation helpers for lock-free containers)
 - Thread pool

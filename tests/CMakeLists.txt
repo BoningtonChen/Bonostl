@@ -3,6 +3,7 @@ add_executable(bonostl_tests
     test_lockfree.cpp
     test_parallel.cpp
     test_threadpool.cpp
+    test_sync.cpp
     third_party/catch_amalgamated.cpp)
 
 target_link_libraries(bonostl_tests PRIVATE Bonostl::Bonostl)
