@@ -8,10 +8,19 @@ namespace Bonostl
     template<typename T>
     struct sorter
     {
-        std::list<T> do_sort(std::list<T> chunk_data)
+        // `depth` bounds the recursion so the wait-while-helping loop cannot
+        // overflow the calling thread's stack on large inputs; at depth 0 the
+        // remaining chunk is sorted sequentially.
+        std::list<T> do_sort(std::list<T> chunk_data, unsigned depth = 8)
         {
             if (chunk_data.empty())
             {
+                return chunk_data;
+            }
+
+            if (depth == 0)
+            {
+                chunk_data.sort();
                 return chunk_data;
             }
 
@@ -43,11 +52,11 @@ namespace Bonostl
 
             thread_pool& pool = default_thread_pool();
             std::future<std::list<T>> new_lower = pool.submit(
-                [this, new_lower_chunk = std::move(new_lower_chunk)]() mutable {
-                    return do_sort(std::move(new_lower_chunk));
+                [this, new_lower_chunk = std::move(new_lower_chunk), depth]() mutable {
+                    return do_sort(std::move(new_lower_chunk), depth - 1);
                 });
 
-            std::list<T> new_higher(do_sort(std::move(chunk_data)));
+            std::list<T> new_higher(do_sort(std::move(chunk_data), depth - 1));
             result.splice(result.end(), new_higher);
 
             while (new_lower.wait_for(std::chrono::seconds(0)) != std::future_status::ready)

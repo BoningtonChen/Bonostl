@@ -9,8 +9,11 @@ namespace Bonostl
     /// halves are sorted concurrently (one on the pool, one on the calling
     /// thread, with wait-while-helping) and merged with std::inplace_merge —
     /// the merge itself is sequential in this version.
+    ///
+    /// `depth` (default 8) bounds the recursion so the wait-while-helping
+    /// loop cannot overflow the calling thread's stack on large ranges.
     template<typename Iterator>
-    void parallel_merge_sort(Iterator first, Iterator last)
+    void parallel_merge_sort(Iterator first, Iterator last, unsigned depth = 8)
     {
         static_assert(std::random_access_iterator<Iterator>,
                       "parallel_merge_sort requires a random-access iterator");
@@ -19,7 +22,7 @@ namespace Bonostl
 
         constexpr unsigned long sequential_threshold = 512;
 
-        if (length < sequential_threshold)
+        if (length < sequential_threshold || depth == 0)
         {
             std::stable_sort(first, last);
             return;
@@ -28,11 +31,11 @@ namespace Bonostl
         Iterator const mid_point = first + length / 2;
         thread_pool& pool = default_thread_pool();
 
-        std::future<void> first_half = pool.submit([first, mid_point] {
-            parallel_merge_sort(first, mid_point);
+        std::future<void> first_half = pool.submit([first, mid_point, depth] {
+            parallel_merge_sort(first, mid_point, depth - 1);
         });
 
-        parallel_merge_sort(mid_point, last);
+        parallel_merge_sort(mid_point, last, depth - 1);
 
         while (first_half.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
         {

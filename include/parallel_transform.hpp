@@ -22,8 +22,12 @@ namespace Bonostl
     ///
     /// Returns the output iterator past the last element written, matching the
     /// return semantics of std::transform.
+    ///
+    /// `depth` (default 8) bounds the recursion so the wait-while-helping
+    /// loop cannot overflow the calling thread's stack on large ranges.
     template<typename Iterator, typename OutIt, typename Func>
-    OutIt parallel_transform(Iterator first, Iterator last, OutIt out, Func func)
+    OutIt parallel_transform(Iterator first, Iterator last, OutIt out, Func func,
+                             unsigned depth = 8)
     {
         static_assert(std::random_access_iterator<Iterator>,
                       "parallel_transform requires a random-access iterator");
@@ -39,7 +43,7 @@ namespace Bonostl
 
         constexpr unsigned long min_per_thread = 25;
 
-        if (length < (2 * min_per_thread))
+        if (length < (2 * min_per_thread) || depth == 0)
         {
             return std::transform(first, last, out, func);
         }
@@ -49,11 +53,11 @@ namespace Bonostl
             OutIt const mid_out = out + length / 2;
             thread_pool& pool = default_thread_pool();
 
-            std::future<OutIt> first_half = pool.submit([first, mid_point, out, func] {
-                return parallel_transform(first, mid_point, out, func);
+            std::future<OutIt> first_half = pool.submit([first, mid_point, out, func, depth] {
+                return parallel_transform(first, mid_point, out, func, depth - 1);
             });
 
-            OutIt const out_end = parallel_transform(mid_point, last, mid_out, func);
+            OutIt const out_end = parallel_transform(mid_point, last, mid_out, func, depth - 1);
 
             while (first_half.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
             {

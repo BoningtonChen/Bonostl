@@ -9,7 +9,7 @@ namespace Bonostl
     {
         template<typename Iterator, typename Predicate>
         bool parallel_any_of_impl(Iterator first, Iterator last, Predicate pred,
-                                  std::atomic<bool>& done)
+                                  std::atomic<bool>& done, unsigned depth)
         {
             unsigned long const length = std::distance(first, last);
 
@@ -20,7 +20,7 @@ namespace Bonostl
 
             constexpr unsigned long min_per_thread = 25;
 
-            if (length < (2 * min_per_thread))
+            if (length < (2 * min_per_thread) || depth == 0)
             {
                 for (; first != last && !done.load(std::memory_order_relaxed); ++first)
                 {
@@ -44,13 +44,15 @@ namespace Bonostl
                 }
 
                 thread_pool& pool = default_thread_pool();
-                std::future<bool> async_result = pool.submit([mid_point, last, pred, &done] {
-                    return parallel_any_of_impl(mid_point, last, pred, done);
+                std::future<bool> async_result = pool.submit([mid_point, last, pred, &done, depth] {
+                    return parallel_any_of_impl(mid_point, last, pred, done, depth - 1);
                 });
 
-                bool const direct_result = parallel_any_of_impl(first, mid_point, pred, done);
+                bool const direct_result =
+                    parallel_any_of_impl(first, mid_point, pred, done, depth - 1);
 
-                while (async_result.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+                while (async_result.wait_for(std::chrono::seconds(0))
+                       != std::future_status::ready)
                 {
                     pool.run_pending_task();
                 }
@@ -61,9 +63,12 @@ namespace Bonostl
     }
 
     /// Parallel count_if on the shared default thread pool. Equivalent result
-    /// to std::count_if.
+    /// to std::count_if. `depth` (default 8) bounds the recursion so the
+    /// wait-while-helping loop cannot overflow the calling thread's stack on
+    /// large ranges.
     template<typename Iterator, typename Predicate>
-    std::size_t parallel_count_if(Iterator first, Iterator last, Predicate pred)
+    std::size_t parallel_count_if(Iterator first, Iterator last, Predicate pred,
+                                  unsigned depth = 8)
     {
         static_assert(std::random_access_iterator<Iterator>,
                       "parallel_count_if requires a random-access iterator");
@@ -77,7 +82,7 @@ namespace Bonostl
 
         constexpr unsigned long min_per_thread = 25;
 
-        if (length < (2 * min_per_thread))
+        if (length < (2 * min_per_thread) || depth == 0)
         {
             return static_cast<std::size_t>(std::count_if(first, last, pred));
         }
@@ -86,11 +91,11 @@ namespace Bonostl
             Iterator const mid_point = first + length / 2;
             thread_pool& pool = default_thread_pool();
 
-            std::future<std::size_t> first_half = pool.submit([first, mid_point, pred] {
-                return parallel_count_if(first, mid_point, pred);
+            std::future<std::size_t> first_half = pool.submit([first, mid_point, pred, depth] {
+                return parallel_count_if(first, mid_point, pred, depth - 1);
             });
 
-            std::size_t const second_half = parallel_count_if(mid_point, last, pred);
+            std::size_t const second_half = parallel_count_if(mid_point, last, pred, depth - 1);
 
             while (first_half.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
             {
@@ -110,7 +115,7 @@ namespace Bonostl
                       "parallel_any_of requires a random-access iterator");
 
         std::atomic<bool> done(false);
-        return detail::parallel_any_of_impl(first, last, pred, done);
+        return detail::parallel_any_of_impl(first, last, pred, done, 8);
     }
 
     /// Parallel all_of, expressed as !any_of(!pred) with early exit.
