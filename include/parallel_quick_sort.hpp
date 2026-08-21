@@ -1,40 +1,13 @@
 #pragma once
 
 #include "bonostlpch.h"
-
-#include "threadsafe_stack.hpp"
+#include "thread_pool.hpp"
 
 namespace Bonostl
 {
     template<typename T>
     struct sorter
     {
-        struct chunk_to_sort
-        {
-            std::list<T> data;
-            std::promise<std::list<T>> promise;
-        };
-
-        sorter()
-            : owner_id(std::this_thread::get_id()),
-              max_thread_count(compute_max_thread_count()),
-              end_of_data(false)
-        {
-        }
-
-        sorter(const sorter&) = delete;
-        sorter& operator=(const sorter&) = delete;
-
-        ~sorter()
-        {
-            end_of_data = true;
-
-            for (auto& thread : threads)
-            {
-                thread.join();
-            }
-        }
-
         std::list<T> do_sort(std::list<T> chunk_data)
         {
             if (chunk_data.empty())
@@ -57,73 +30,40 @@ namespace Bonostl
                 return result;
             }
 
-            chunk_to_sort new_lower_chunk;
-            new_lower_chunk.data.splice(
-                new_lower_chunk.data.end(), chunk_data, chunk_data.begin(), divide_point);
+            std::list<T> new_lower_chunk;
+            new_lower_chunk.splice(
+                new_lower_chunk.end(), chunk_data, chunk_data.begin(), divide_point);
 
             if (chunk_data.empty())
             {
-                new_lower_chunk.data.sort();
-                result.splice(result.begin(), new_lower_chunk.data);
+                new_lower_chunk.sort();
+                result.splice(result.begin(), new_lower_chunk);
                 return result;
             }
 
-            std::future<std::list<T>> new_lower = new_lower_chunk.promise.get_future();
-            chunks.push(std::move(new_lower_chunk));
-
-            if (std::this_thread::get_id() == owner_id && threads.size() < max_thread_count)
-            {
-                threads.emplace_back(&sorter::sort_thread, this);
-            }
+            thread_pool& pool = default_thread_pool();
+            std::future<std::list<T>> new_lower = pool.submit(
+                [this, new_lower_chunk = std::move(new_lower_chunk)]() mutable {
+                    return do_sort(std::move(new_lower_chunk));
+                });
 
             std::list<T> new_higher(do_sort(std::move(chunk_data)));
             result.splice(result.end(), new_higher);
 
             while (new_lower.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
             {
-                try_sort_chunk();
+                pool.run_pending_task();
             }
 
             result.splice(result.begin(), new_lower.get());
             return result;
         }
-
-    private:
-        static unsigned compute_max_thread_count()
-        {
-            unsigned const hardware_threads = std::thread::hardware_concurrency();
-            return hardware_threads > 1 ? hardware_threads - 1 : 1;
-        }
-
-        void try_sort_chunk()
-        {
-            if (auto chunk = chunks.pop())
-            {
-                sort_chunk(std::move(*chunk));
-            }
-        }
-
-        void sort_chunk(chunk_to_sort chunk)
-        {
-            chunk.promise.set_value(do_sort(std::move(chunk.data)));
-        }
-
-        void sort_thread()
-        {
-            while (!end_of_data)
-            {
-                try_sort_chunk();
-                std::this_thread::yield();
-            }
-        }
-
-        threadsafe_stack<chunk_to_sort> chunks;
-        std::vector<std::thread> threads;
-        std::thread::id const owner_id;
-        unsigned const max_thread_count;
-        std::atomic<bool> end_of_data;
     };
 
+    /// Parallel quicksort now backed by the shared default thread pool
+    /// (C++ Concurrency in Action, listing 9.9). While waiting for the lower
+    /// half, the calling thread helps the pool run pending tasks, so even a
+    /// pool narrower than the recursion width cannot deadlock.
     template<typename T>
     std::list<T> parallel_quick_sort(std::list<T> input)
     {
