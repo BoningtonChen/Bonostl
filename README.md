@@ -33,7 +33,7 @@ and links libatomic for 16-byte atomics on GCC/Clang.
 ```bash
 cmake -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++
 cmake --build build
-./build/bonostl_demo.exe
+./build/bonostl_benchmark.exe
 ctest --test-dir build          # run the test suite
 ```
 
@@ -41,7 +41,7 @@ ctest --test-dir build          # run the test suite
 ```bash
 xmake f --toolchain=gcc
 xmake
-./build/windows/x64/release/bonostl_demo.exe
+./build/windows/x64/release/bonostl_benchmark.exe
 xmake run bonostl_tests         # run the test suite
 ```
 
@@ -59,7 +59,7 @@ Both build systems work inside Visual Studio without changing the toolchain
   xmake project -k vsxmake2026 -m "debug,release"
   dotnet sln vsxmake2026/Bonostl.sln migrate   # upgrade to .slnx
   ```
-  Set `bonostl_demo` (or `bonostl_tests`) as the startup project before
+  Set `bonostl_benchmark` (or `bonostl_tests`) as the startup project before
   running — the `Bonostl` target is a header-only library with no executable.
 
 ## Testing

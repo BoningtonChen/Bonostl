@@ -15,7 +15,7 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(BONOSTL_BUILD_DEMO "Build the Bonostl demo program" ON)
+option(BONOSTL_BUILD_BENCHMARK "Build the Bonostl benchmark program" ON)
 option(BONOSTL_BUILD_TESTS "Build the Bonostl test suite" ON)
 
 add_library(Bonostl INTERFACE)
@@ -36,10 +36,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_link_libraries(Bonostl INTERFACE atomic)
 endif()
 
-if(BONOSTL_BUILD_DEMO)
-    add_executable(bonostl_demo src/main.cpp)
-    target_link_libraries(bonostl_demo PRIVATE Bonostl::Bonostl)
-    target_precompile_headers(bonostl_demo PRIVATE include/bonostlpch.h)
+if(BONOSTL_BUILD_BENCHMARK)
+    add_executable(bonostl_benchmark src/main.cpp)
+    target_link_libraries(bonostl_benchmark PRIVATE Bonostl::Bonostl)
+    target_precompile_headers(bonostl_benchmark PRIVATE include/bonostlpch.h)
 endif()
 
 if(BONOSTL_BUILD_TESTS)

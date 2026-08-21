@@ -4,7 +4,7 @@ set_languages("cxx26")
 
 add_rules("mode.debug", "mode.release")
 
-option("demo", {default = true, description = "Build the Bonostl demo program"})
+option("benchmark", {default = true, description = "Build the Bonostl benchmark program"})
 option("tests", {default = true, description = "Build the Bonostl test suite"})
 
 target("Bonostl")
@@ -15,8 +15,8 @@ target("Bonostl")
         add_syslinks("atomic", {public = true})
     end
 
-if has_config("demo") then
-    target("bonostl_demo")
+if has_config("benchmark") then
+    target("bonostl_benchmark")
         set_kind("binary")
         add_deps("Bonostl")
         add_files("src/main.cpp")
