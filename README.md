@@ -101,6 +101,7 @@ The test suite uses Catch2 v3 and covers:
   - barrier (cf. std::barrier, C++20)
 - Utilities
   - hazard_ptr (hazard-pointer reclamation helpers for lock-free containers)
+  - epoch_reclaim (epoch-based reclamation domain for whole-operation protection)
 - Thread pool
   - function_wrapper (move-only type-erased task wrapper)
   - work_stealing_queue

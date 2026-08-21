@@ -8,6 +8,7 @@ target("bonostl_tests")
         "test_parallel.cpp",
         "test_threadpool.cpp",
         "test_sync.cpp",
+        "test_epoch.cpp",
         "third_party/catch_amalgamated.cpp")
     on_run(function (target)
         os.exec(target:targetfile())
