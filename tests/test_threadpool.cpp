@@ -1,9 +1,13 @@
 #include <catch_amalgamated.hpp>
 
+#include <atomic>
 #include <functional>
 #include <memory>
+#include <thread>
+#include <vector>
 
 #include "function_wrapper.hpp"
+#include "work_stealing_queue.hpp"
 
 TEST_CASE("function_wrapper: invokes wrapped callable", "[threadpool]")
 {
@@ -53,4 +57,98 @@ TEST_CASE("function_wrapper: calling empty wrapper throws", "[threadpool]")
     Bonostl::function_wrapper task;
 
     REQUIRE_THROWS_AS(task(), std::bad_function_call);
+}
+
+TEST_CASE("work_stealing_queue: try_pop yields LIFO order", "[threadpool]")
+{
+    Bonostl::work_stealing_queue q;
+    std::vector<int> order;
+
+    q.push(Bonostl::function_wrapper([&] { order.push_back(1); }));
+    q.push(Bonostl::function_wrapper([&] { order.push_back(2); }));
+    q.push(Bonostl::function_wrapper([&] { order.push_back(3); }));
+
+    Bonostl::function_wrapper task;
+    REQUIRE(q.try_pop(task));
+    task();
+    REQUIRE(q.try_pop(task));
+    task();
+    REQUIRE(q.try_pop(task));
+    task();
+
+    REQUIRE(order == std::vector<int>({3, 2, 1}));
+}
+
+TEST_CASE("work_stealing_queue: try_steal yields FIFO order", "[threadpool]")
+{
+    Bonostl::work_stealing_queue q;
+    std::vector<int> order;
+
+    q.push(Bonostl::function_wrapper([&] { order.push_back(1); }));
+    q.push(Bonostl::function_wrapper([&] { order.push_back(2); }));
+    q.push(Bonostl::function_wrapper([&] { order.push_back(3); }));
+
+    Bonostl::function_wrapper task;
+    REQUIRE(q.try_steal(task));
+    task();
+    REQUIRE(q.try_steal(task));
+    task();
+    REQUIRE(q.try_steal(task));
+    task();
+
+    REQUIRE(order == std::vector<int>({1, 2, 3}));
+}
+
+TEST_CASE("work_stealing_queue: empty queue try_pop/try_steal return false", "[threadpool]")
+{
+    Bonostl::work_stealing_queue q;
+    Bonostl::function_wrapper task;
+
+    REQUIRE_FALSE(q.try_pop(task));
+    REQUIRE_FALSE(q.try_steal(task));
+}
+
+TEST_CASE("work_stealing_queue: concurrent push/pop/steal executes each task once", "[threadpool]")
+{
+    Bonostl::work_stealing_queue q;
+    constexpr int total = 2000;
+    std::atomic<int> executed{0};
+
+    for (int i = 0; i < total; ++i)
+    {
+        q.push(Bonostl::function_wrapper([&] { ++executed; }));
+    }
+
+    std::atomic<bool> done{false};
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 4; ++t)
+    {
+        threads.emplace_back([&] {
+            Bonostl::function_wrapper task;
+            while (!done.load())
+            {
+                if (q.try_pop(task) || q.try_steal(task))
+                {
+                    task();
+                }
+                else
+                {
+                    std::this_thread::yield();
+                }
+            }
+        });
+    }
+
+    while (executed.load() < total)
+    {
+        std::this_thread::yield();
+    }
+    done.store(true);
+
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    REQUIRE(executed == total);
 }
