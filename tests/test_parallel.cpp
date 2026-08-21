@@ -13,6 +13,7 @@
 #include "parallel_for_each.hpp"
 #include "parallel_partial_sum.hpp"
 #include "parallel_quick_sort.hpp"
+#include "parallel_predicates.hpp"
 #include "parallel_transform.hpp"
 
 namespace
@@ -221,4 +222,52 @@ TEST_CASE("parallel_transform: small range uses single-threaded path", "[paralle
 
     REQUIRE(out_end == result.end());
     REQUIRE(result == reference);
+}
+
+TEST_CASE("parallel_count_if: matches std::count_if", "[parallel]")
+{
+    std::vector<int> data = make_random_vector(5000, 21);
+    auto const pred = [](int v) { return v % 3 == 0; };
+
+    REQUIRE(Bonostl::parallel_count_if(data.begin(), data.end(), pred)
+            == std::count_if(data.begin(), data.end(), pred));
+}
+
+TEST_CASE("parallel_count_if: empty range and all match", "[parallel]")
+{
+    std::vector<int> data{1, 2, 3};
+    auto const is_positive = [](int v) { return v > 0; };
+
+    REQUIRE(Bonostl::parallel_count_if(data.begin(), data.begin(), is_positive) == 0);
+    REQUIRE(Bonostl::parallel_count_if(data.begin(), data.end(), is_positive) == 3);
+}
+
+TEST_CASE("parallel predicates: match std versions", "[parallel]")
+{
+    std::vector<int> data = make_random_vector(5000, 22);
+    auto const in_range = [](int v) { return v >= 0 && v < 1000; };
+    auto const is_negative = [](int v) { return v < 0; };
+
+    REQUIRE(Bonostl::parallel_all_of(data.begin(), data.end(), in_range)
+            == std::all_of(data.begin(), data.end(), in_range));
+    REQUIRE(Bonostl::parallel_any_of(data.begin(), data.end(), is_negative)
+            == std::any_of(data.begin(), data.end(), is_negative));
+    REQUIRE(Bonostl::parallel_none_of(data.begin(), data.end(), is_negative)
+            == std::none_of(data.begin(), data.end(), is_negative));
+
+    data[4321] = -7;
+    REQUIRE_FALSE(Bonostl::parallel_all_of(data.begin(), data.end(), in_range));
+    REQUIRE(Bonostl::parallel_any_of(data.begin(), data.end(), is_negative));
+    REQUIRE_FALSE(Bonostl::parallel_none_of(data.begin(), data.end(), is_negative));
+}
+
+TEST_CASE("parallel predicates: empty range semantics", "[parallel]")
+{
+    std::vector<int> data;
+    auto const any = [](int) { return true; };
+
+    REQUIRE(Bonostl::parallel_all_of(data.begin(), data.end(), any));
+    REQUIRE_FALSE(Bonostl::parallel_any_of(data.begin(), data.end(), any));
+    REQUIRE(Bonostl::parallel_none_of(data.begin(), data.end(), any));
+    REQUIRE(Bonostl::parallel_count_if(data.begin(), data.end(), any) == 0);
 }

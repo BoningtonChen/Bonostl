@@ -87,6 +87,7 @@ The test suite uses Catch2 v3 and covers:
   - parallel_partial_sum
   - parallel_quick_sort
   - parallel_transform
+  - parallel_predicates (count_if, all_of, any_of, none_of)
 - Locks
   - spinlock_mutex
 - Utilities
