@@ -5,6 +5,7 @@
 #include <thread>
 #include <vector>
 
+#include "lockfree_hash_map.hpp"
 #include "lockfree_list.hpp"
 #include "lockfree_queue.hpp"
 #include "lockfree_stack.hpp"
@@ -476,6 +477,154 @@ TEST_CASE("concurrent_skip_list: mixed insert/erase stress", "[lockfree]")
         {
             bool const should_exist = (i % 2) != 0;
             REQUIRE(list.contains(t * per_thread + i) == should_exist);
+        }
+    }
+}
+
+TEST_CASE("lockfree_hash_map: sequential put, get, erase", "[lockfree]")
+{
+    Bonostl::lockfree_hash_map<int, int> map;
+
+    REQUIRE(map.size() == 0);
+
+    REQUIRE(map.put(1, 100));
+    REQUIRE(map.put(2, 200));
+    REQUIRE(map.put(3, 300));
+
+    REQUIRE(map.get(1) == std::optional<int>(100));
+    REQUIRE(map.get(3) == std::optional<int>(300));
+    REQUIRE_FALSE(map.get(99).has_value());
+    REQUIRE(map.contains(2));
+
+    REQUIRE(map.erase(2));
+    REQUIRE_FALSE(map.contains(2));
+    REQUIRE_FALSE(map.erase(2));
+    REQUIRE(map.size() == 2);
+}
+
+TEST_CASE("lockfree_hash_map: put updates existing key", "[lockfree]")
+{
+    Bonostl::lockfree_hash_map<int, int> map;
+
+    REQUIRE(map.put(7, 70));
+    REQUIRE_FALSE(map.put(7, 77));
+    REQUIRE(map.get(7) == std::optional<int>(77));
+    REQUIRE(map.size() == 1);
+}
+
+TEST_CASE("lockfree_hash_map: concurrent disjoint puts", "[lockfree]")
+{
+    Bonostl::lockfree_hash_map<int, int> map;
+
+    constexpr int per_thread = 500;
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 4; ++t)
+    {
+        threads.emplace_back([&, t] {
+            for (int i = 0; i < per_thread; ++i)
+            {
+                map.put(t * per_thread + i, i);
+            }
+        });
+    }
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    REQUIRE(map.size() == 4 * per_thread);
+    for (int v = 0; v < 4 * per_thread; ++v)
+    {
+        auto const got = map.get(v);
+        REQUIRE(got.has_value());
+        REQUIRE(*got == v % per_thread);
+    }
+}
+
+TEST_CASE("lockfree_hash_map: grows buckets under load", "[lockfree]")
+{
+    Bonostl::lockfree_hash_map<int, int> map(2);
+    std::size_t const initial_buckets = map.bucket_count();
+
+    constexpr int total = 2000;
+    for (int v = 0; v < total; ++v)
+    {
+        map.put(v, v * 2);
+    }
+
+    REQUIRE(map.bucket_count() > initial_buckets);
+    for (int v = 0; v < total; ++v)
+    {
+        REQUIRE(map.get(v) == std::optional<int>(v * 2));
+    }
+}
+
+TEST_CASE("lockfree_hash_map: hash collisions stay distinct", "[lockfree]")
+{
+    struct mod4_hash
+    {
+        std::size_t operator()(int k) const
+        {
+            return static_cast<std::size_t>(k % 4);
+        }
+    };
+
+    Bonostl::lockfree_hash_map<int, int, mod4_hash> map;
+
+    for (int v = 0; v < 200; ++v)
+    {
+        REQUIRE(map.put(v, v));
+    }
+    for (int v = 0; v < 200; ++v)
+    {
+        REQUIRE(map.get(v) == std::optional<int>(v));
+    }
+    REQUIRE(map.size() == 200);
+}
+
+TEST_CASE("lockfree_hash_map: mixed put/erase stress", "[lockfree]")
+{
+    Bonostl::lockfree_hash_map<int, int> map;
+
+    constexpr int per_thread = 500;
+    std::atomic<int> puts{0};
+    std::atomic<int> erases{0};
+
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 4; ++t)
+    {
+        threads.emplace_back([&, t] {
+            for (int i = 0; i < per_thread; ++i)
+            {
+                if (map.put(t * per_thread + i, i))
+                {
+                    ++puts;
+                }
+            }
+            for (int i = 0; i < per_thread; i += 2)
+            {
+                if (map.erase(t * per_thread + i))
+                {
+                    ++erases;
+                }
+            }
+        });
+    }
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    REQUIRE(puts == 4 * per_thread);
+    REQUIRE(erases == 2 * per_thread);
+    REQUIRE(map.size() == 2 * per_thread);
+
+    for (int t = 0; t < 4; ++t)
+    {
+        for (int i = 0; i < per_thread; ++i)
+        {
+            bool const should_exist = (i % 2) != 0;
+            REQUIRE(map.contains(t * per_thread + i) == should_exist);
         }
     }
 }
