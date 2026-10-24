@@ -232,7 +232,7 @@ TEST_CASE("parallel_count_if: matches std::count_if", "[parallel]")
     auto const pred = [](int v) { return v % 3 == 0; };
 
     REQUIRE(Bonostl::parallel_count_if(data.begin(), data.end(), pred)
-            == std::count_if(data.begin(), data.end(), pred));
+            == static_cast<std::size_t>(std::count_if(data.begin(), data.end(), pred)));
 }
 
 TEST_CASE("parallel_count_if: empty range and all match", "[parallel]")
